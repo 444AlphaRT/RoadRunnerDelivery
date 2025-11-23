@@ -3,10 +3,10 @@ using UnityEngine;
 public class CameraFollow : MonoBehaviour
 {
     [Header("Target to follow")]
-    public Transform target;          
+    public Transform target;
 
     [Header("Follow settings")]
-    public float smoothSpeed = 5f;    
+    public float smoothSpeed = 5f;
 
     private Vector3 offset;
 

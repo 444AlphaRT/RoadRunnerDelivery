@@ -26,3 +26,72 @@ The game is also available on itch.io:
 1. Clone the repo
 2. Open in Unity
 3. Run the `Main` scene
+
+## UML – Class Diagram
+
+```mermaid
+classDiagram
+    class PlayerController {
+        +bool HasPackage
+        +int deliveriesCompleted
+        +void PickUpPackage()
+        +void DeliverPackage()
+    }
+
+    class DeliveryPoint {
+        +PointType pointType
+        +void OnTriggerEnter2D(Collider2D other)
+    }
+
+    class PointType {
+        <<enumeration>>
+        Pickup
+        Dropoff
+    }
+
+    class RandomDropoffLocation {
+        +Transform[] dropoffSpots
+        +void MoveToRandomSpot()
+    }
+
+    class Waypoint {
+        +List~Waypoint~ neighbors
+        +float gizmoRadius
+    }
+
+    class WayPointNetwork {
+        +List~Waypoint~ waypoints
+        +float maxNeighborDistance
+        +LayerMask obstacleMask
+        +void BuildNetwork()
+        +Waypoint FindClosest(Vector3 position)
+    }
+
+    class AStarPathfinder {
+        +WayPointNetwork network
+        +List~Waypoint~ FindPath(Waypoint start, Waypoint goal)
+    }
+
+    class MinimapPathRenderer {
+        +AStarPathfinder pathfinder
+        +WayPointNetwork network
+        +Transform player
+        +Transform pickupPoint
+        +Transform dropoffPoint
+        +PlayerController playerController
+        +void UpdatePath()
+        +void SetDropoffTarget(Transform newTarget)
+    }
+
+    PlayerController <.. DeliveryPoint
+    DeliveryPoint --> PointType
+    DeliveryPoint --> RandomDropoffLocation
+
+    WayPointNetwork "1" o-- "*" Waypoint
+    Waypoint "1" --> "*" Waypoint
+
+    AStarPathfinder --> WayPointNetwork
+    MinimapPathRenderer --> AStarPathfinder
+    MinimapPathRenderer --> WayPointNetwork
+    MinimapPathRenderer --> PlayerController
+```

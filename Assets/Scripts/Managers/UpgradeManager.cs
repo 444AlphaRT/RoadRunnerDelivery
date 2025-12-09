@@ -14,7 +14,7 @@ public class UpgradeManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private PlayerController player;
     [SerializeField] private MoneyManager moneyManager;
-    [SerializeField] private GameObject upgradePanel;   // The whole upgrade screen
+    [SerializeField] private GameObject upgradePanel; // The whole upgrade screen
 
     [Header("Speed Upgrade")]
     [SerializeField] private int maxSpeedLevel = 5;
@@ -39,8 +39,8 @@ public class UpgradeManager : MonoBehaviour
     [SerializeField] private Image incomeFill;
 
     [Header("UI")]
-    [SerializeField] private TextMeshProUGUI upgradeCostText;  // number under the Upgrade button
-    [SerializeField] private TextMeshProUGUI feedbackText;     // short messages
+    [SerializeField] private TextMeshProUGUI upgradeCostText; // number under the Upgrade button
+    [SerializeField] private TextMeshProUGUI feedbackText;    // short messages
 
     private int currentSpeedLevel = 0;
     private int currentTopSpeedLevel = 0;
@@ -140,15 +140,17 @@ public class UpgradeManager : MonoBehaviour
             case UpgradeType.Speed:
                 currentSpeedLevel++;
                 player.moveSpeed = baseMoveSpeed + currentSpeedLevel * moveSpeedIncreasePerLevel;
-                player.maxSpeed  = baseMaxSpeed  + currentSpeedLevel * maxSpeedIncreasePerLevel;
+                // תוקן: הוסרו רווחים כפולים
+                player.maxSpeed = baseMaxSpeed + currentSpeedLevel * maxSpeedIncreasePerLevel;
                 ShowFeedback("Speed upgraded!");
                 break;
 
             case UpgradeType.TopSpeed:
                 currentTopSpeedLevel++;
-                player.maxSpeed = baseMaxSpeed
-                                  + currentSpeedLevel * maxSpeedIncreasePerLevel
-                                  + currentTopSpeedLevel * topSpeedIncreasePerLevel;
+                // תוקן: חיבור השורות והסרת רווחים מיותרים כדי למנוע אזהרות עיצוב
+                player.maxSpeed = baseMaxSpeed + 
+                                  (currentSpeedLevel * maxSpeedIncreasePerLevel) + 
+                                  (currentTopSpeedLevel * topSpeedIncreasePerLevel);
                 ShowFeedback("Top speed upgraded!");
                 break;
 

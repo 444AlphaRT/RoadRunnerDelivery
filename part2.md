@@ -1,4 +1,4 @@
-<div dir="rtl">
+<div dir="rtl" style="unicode-bidi: plaintext; font-variant-numeric: normal;">
 
 # שאלות Playtest — RoadRunner Delivery
 

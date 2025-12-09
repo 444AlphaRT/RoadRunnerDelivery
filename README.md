@@ -20,7 +20,7 @@ The goal is to complete as many deliveries as possible.
 ## Play Online
 The game is also available on itch.io:
 
-➡️ **[Play Here](https://YOUR-ITCH-URL-HERE)**
+➡️ **[Play Here]([https://YOUR-ITCH-URL-HERE](https://alpha444rt.itch.io/roadrunnerdeliveryv2))**
 
 ## Run Locally
 1. Clone the repo

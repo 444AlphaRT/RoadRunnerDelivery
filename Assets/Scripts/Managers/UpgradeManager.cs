@@ -65,22 +65,17 @@ public class UpgradeManager : MonoBehaviour
             baseMaxSpeed = player.maxSpeed;
         }
 
-        // Start with speed selected
         SelectSpeed();
 
-        // Optional: make sure panel starts hidden
         if (upgradePanel != null)
             upgradePanel.SetActive(false);
     }
-
-    // ----- Panel control -----
 
     public void OpenUpgradePanel()
     {
         if (upgradePanel != null)
             upgradePanel.SetActive(true);
 
-        // refresh cost + bars when opening
         UpdateBars();
         UpdateCostText();
     }
@@ -90,8 +85,6 @@ public class UpgradeManager : MonoBehaviour
         if (upgradePanel != null)
             upgradePanel.SetActive(false);
     }
-
-    // ----- Selection buttons -----
 
     public void SelectSpeed()
     {
@@ -113,8 +106,6 @@ public class UpgradeManager : MonoBehaviour
         UpdateCostText();
         ShowFeedback("Income selected");
     }
-
-    // ----- Apply upgrade (Upgrade button at the bottom) -----
 
     public void OnUpgradeButtonPressed()
     {
@@ -140,17 +131,15 @@ public class UpgradeManager : MonoBehaviour
             case UpgradeType.Speed:
                 currentSpeedLevel++;
                 player.moveSpeed = baseMoveSpeed + currentSpeedLevel * moveSpeedIncreasePerLevel;
-                // תוקן: הוסרו רווחים כפולים
                 player.maxSpeed = baseMaxSpeed + currentSpeedLevel * maxSpeedIncreasePerLevel;
                 ShowFeedback("Speed upgraded!");
                 break;
 
             case UpgradeType.TopSpeed:
                 currentTopSpeedLevel++;
-                // תוקן: חיבור השורות והסרת רווחים מיותרים כדי למנוע אזהרות עיצוב
-                player.maxSpeed = baseMaxSpeed + 
-                                  (currentSpeedLevel * maxSpeedIncreasePerLevel) + 
-                                  (currentTopSpeedLevel * topSpeedIncreasePerLevel);
+                player.maxSpeed = baseMaxSpeed
+                                  + (currentSpeedLevel * maxSpeedIncreasePerLevel)
+                                  + (currentTopSpeedLevel * topSpeedIncreasePerLevel);
                 ShowFeedback("Top speed upgraded!");
                 break;
 
@@ -164,8 +153,6 @@ public class UpgradeManager : MonoBehaviour
         UpdateBars();
         UpdateCostText();
     }
-
-    // ----- Cost calculation -----
 
     private int GetSelectedCost()
     {
@@ -186,8 +173,6 @@ public class UpgradeManager : MonoBehaviour
 
         return -1;
     }
-
-    // ----- UI update -----
 
     private void UpdateBars()
     {

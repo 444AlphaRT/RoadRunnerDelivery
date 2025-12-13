@@ -14,14 +14,12 @@ public class PlayerController : MonoBehaviour
     public bool HasPackage = false;
     public int deliveriesCompleted = 0;
     [Header("Fuel Settings")]
-    public int maxDeliveriesPerTank = 2;     
-    public bool outOfFuel = false;          
-    private int deliveriesOnCurrentTank = 0; 
+    public int maxDeliveriesPerTank = 2;
+    public bool outOfFuel = false;
+    private int deliveriesOnCurrentTank = 0;
     [Header("Refuel Settings")]
     public int refuelCostEmpty = 10;
     public int refuelCostOneLeft = 5;
-    public int refuelCostEmpty = 10;
-    public int refuelCostOneLeft = 5; 
     private Vector2 inputDirection;
     private Rigidbody2D rb;
     private void Awake()

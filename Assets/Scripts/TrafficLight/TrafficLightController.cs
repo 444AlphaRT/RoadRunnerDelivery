@@ -6,24 +6,19 @@ public class TrafficLightController : MonoBehaviour
     [Header("Timing")]
     public float greenDuration = 3f;   
     public float redDuration = 3f;     
-
     [Header("Penalty Settings")]
     public int firstRedFine = 3;       
     public int secondRedFine = 6;     
     public float stopDuration = 5f;   
-
     [Header("Sprites")]
     public Sprite greenSprite;         
     public Sprite redSprite;           
-
     private bool isGreen = true;      
     private bool handledThisRed = false; 
-
     private SpriteRenderer sr;
     private BoxCollider2D box;
     private Transform player;
     private static int redViolations = 0;
-
     private void Start()
     {
         sr = GetComponent<SpriteRenderer>();
@@ -41,7 +36,6 @@ public class TrafficLightController : MonoBehaviour
         UpdateVisual();
         StartCoroutine(SwitchRoutine());
     }
-
     private IEnumerator SwitchRoutine()
     {
         while (true)
@@ -55,7 +49,6 @@ public class TrafficLightController : MonoBehaviour
             yield return new WaitForSeconds(redDuration);
         }
     }
-
     private void UpdateVisual()
     {
         if (sr == null) return;
@@ -65,7 +58,6 @@ public class TrafficLightController : MonoBehaviour
         else if (!isGreen && redSprite != null)
             sr.sprite = redSprite;
     }
-
     private void Update()
     {
         if (player == null || box == null)
@@ -79,11 +71,9 @@ public class TrafficLightController : MonoBehaviour
             }
         }
     }
-
     private void HandleRedViolation()
     {
         redViolations++;
-
         if (redViolations == 1)
         {
             ApplyFine(firstRedFine);
@@ -97,7 +87,6 @@ public class TrafficLightController : MonoBehaviour
             StopPlayerForSeconds(stopDuration);
         }
     }
-
     private void ApplyFine(int amount)
     {
         if (MoneyManager.Instance == null)
@@ -105,7 +94,6 @@ public class TrafficLightController : MonoBehaviour
             Debug.LogWarning("TrafficLight: MoneyManager.Instance is NULL!");
             return;
         }
-
         bool success = MoneyManager.Instance.TrySpend(amount);
 
         if (success)
@@ -117,7 +105,6 @@ public class TrafficLightController : MonoBehaviour
             Debug.Log("Fine not applied – not enough money (already 0).");
         }
     }
-
     private void StopPlayerForSeconds(float seconds)
     {
         PlayerController pc = player.GetComponent<PlayerController>();
@@ -126,10 +113,8 @@ public class TrafficLightController : MonoBehaviour
             Debug.LogWarning("TrafficLight: PlayerController not found on Player. Can't stop movement.");
             return;
         }
-
         StartCoroutine(StopRoutine(pc, seconds));
     }
-
     private IEnumerator StopRoutine(PlayerController pc, float seconds)
     {
         bool prevCanMove = pc.canMove;
@@ -137,7 +122,6 @@ public class TrafficLightController : MonoBehaviour
         yield return new WaitForSeconds(seconds);
         pc.canMove = prevCanMove;
     }
-
     private void OnDrawGizmosSelected()
     {
         BoxCollider2D b = GetComponent<BoxCollider2D>();

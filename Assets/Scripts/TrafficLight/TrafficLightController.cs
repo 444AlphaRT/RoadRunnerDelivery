@@ -4,6 +4,7 @@ using UnityEngine;
 public class TrafficLightController : MonoBehaviour
 {
     [Header("Timing")]
+<<<<<<< HEAD
     public float greenDuration = 3f;
     public float redDuration = 3f;
     [Header("Penalty Settings")]
@@ -15,6 +16,19 @@ public class TrafficLightController : MonoBehaviour
     public Sprite redSprite;         
     private bool isGreen = true;  
     private bool handledThisRed = false;
+=======
+    public float greenDuration = 3f;   
+    public float redDuration = 3f;     
+    [Header("Penalty Settings")]
+    public int firstRedFine = 3;       
+    public int secondRedFine = 6;     
+    public float stopDuration = 5f;   
+    [Header("Sprites")]
+    public Sprite greenSprite;         
+    public Sprite redSprite;           
+    private bool isGreen = true;      
+    private bool handledThisRed = false; 
+>>>>>>> b5d84ad7dac22df62d4cbf74f3090f58264d3463
     private SpriteRenderer sr;
     private BoxCollider2D box;
     private Transform player;

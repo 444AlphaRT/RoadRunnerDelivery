@@ -5,17 +5,29 @@ public class PlayerController : MonoBehaviour
     public float moveSpeed = 5f;// Base movement speed
     public float maxSpeed = 8f;// Maximum allowed speed
     [Header("Gameplay State")]
+<<<<<<< HEAD
     public bool canMove = false;// Whether the player is allowed to move
     [Header("Delivery State")]
     public bool HasPackage = false;// Whether the player is currently holding a package
     public int deliveriesCompleted = 0;// Total number of completed deliveries
+=======
+    public bool canMove = false;   // Whether the player is allowed to move
+    [Header("Delivery State")]
+    public bool HasPackage = false;          // Whether the player is currently holding a package
+    public int deliveriesCompleted = 0;      // Total number of completed deliveries
+>>>>>>> b5d84ad7dac22df62d4cbf74f3090f58264d3463
     [Header("Fuel Settings")]
     public int maxDeliveriesPerTank = 2;     
     public bool outOfFuel = false;          
     private int deliveriesOnCurrentTank = 0; 
     [Header("Refuel Settings")]
+<<<<<<< HEAD
     public int refuelCostEmpty = 10;// Cost when fuel is empty (0)
     public int refuelCostOneLeft = 5;// Cost when fuel is 1
+=======
+    public int refuelCostEmpty = 10;          // Cost when fuel is empty (0)
+    public int refuelCostOneLeft = 5;         // Cost when fuel is 1
+>>>>>>> b5d84ad7dac22df62d4cbf74f3090f58264d3463
     private Vector2 inputDirection;
     private Rigidbody2D rb;
     private void Awake()
@@ -40,6 +52,10 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         if (rb == null) return;
+<<<<<<< HEAD
+=======
+        // Stop movement if not allowed or out of fuel
+>>>>>>> b5d84ad7dac22df62d4cbf74f3090f58264d3463
         if (!canMove || outOfFuel)
         {
             rb.linearVelocity = Vector2.zero;
@@ -69,6 +85,10 @@ public class PlayerController : MonoBehaviour
         HasPackage = false;
         deliveriesCompleted++;
         Debug.Log("Delivered package. Total deliveries: " + deliveriesCompleted);
+<<<<<<< HEAD
+=======
+        // --- Fuel usage per delivery ---
+>>>>>>> b5d84ad7dac22df62d4cbf74f3090f58264d3463
         deliveriesOnCurrentTank++;
         if (FuelManager.Instance != null)
         {
@@ -90,6 +110,10 @@ public class PlayerController : MonoBehaviour
         }
         Debug.Log("Refueled! Tank reset.");
     }
+<<<<<<< HEAD
+=======
+    // --- Refuel logic with different prices ---
+>>>>>>> b5d84ad7dac22df62d4cbf74f3090f58264d3463
     private void TryRefuelByKey()
     {
         int fuelLeft = maxDeliveriesPerTank - deliveriesOnCurrentTank;
@@ -97,9 +121,15 @@ public class PlayerController : MonoBehaviour
             return;
         int cost;
         if (fuelLeft == 0)
+<<<<<<< HEAD
             cost = refuelCostEmpty;
         else if (fuelLeft == 1)
             cost = refuelCostOneLeft;
+=======
+            cost = refuelCostEmpty;    
+        else if (fuelLeft == 1)
+            cost = refuelCostOneLeft;    
+>>>>>>> b5d84ad7dac22df62d4cbf74f3090f58264d3463
         else
             return;
         if (MoneyManager.Instance == null)

@@ -102,8 +102,8 @@ public class PlayerController : MonoBehaviour
         if (fuelLeft == 0)
             cost = refuelCostEmpty;
         else if (fuelLeft == 1)
-            cost = refuelCostOneLeft;
-            cost = refuelCostEmpty;
+        cost = refuelCostOneLeft;
+        cost = refuelCostEmpty;
         else if (fuelLeft == 1)
             cost = refuelCostOneLeft;
         else

@@ -7,25 +7,14 @@ public class TrafficLightController : MonoBehaviour
     public float greenDuration = 3f;
     public float redDuration = 3f;
     [Header("Penalty Settings")]
-    public int firstRedFine = 3;       
-    public int secondRedFine = 6;     
+    public int firstRedFine = 3;
+    public int secondRedFine = 6;
     public float stopDuration = 5f;
     [Header("Sprites")]
-    public Sprite greenSprite;    
-    public Sprite redSprite;         
-    private bool isGreen = true;  
+    public Sprite greenSprite;
+    public Sprite redSprite;
+    private bool isGreen = true;
     private bool handledThisRed = false;
-    public float greenDuration = 3f;   
-    public float redDuration = 3f;     
-    [Header("Penalty Settings")]
-    public int firstRedFine = 3;       
-    public int secondRedFine = 6;     
-    public float stopDuration = 5f;   
-    [Header("Sprites")]
-    public Sprite greenSprite;         
-    public Sprite redSprite;           
-    private bool isGreen = true;      
-    private bool handledThisRed = false; 
     private SpriteRenderer sr;
     private BoxCollider2D box;
     private Transform player;
@@ -34,6 +23,7 @@ public class TrafficLightController : MonoBehaviour
     {
         sr = GetComponent<SpriteRenderer>();
         box = GetComponent<BoxCollider2D>();
+
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
         {
@@ -51,7 +41,7 @@ public class TrafficLightController : MonoBehaviour
         while (true)
         {
             isGreen = true;
-            handledThisRed = false;   
+            handledThisRed = false;
             UpdateVisual();
             yield return new WaitForSeconds(greenDuration);
             isGreen = false;
@@ -61,28 +51,39 @@ public class TrafficLightController : MonoBehaviour
     }
     private void UpdateVisual()
     {
-        if (sr == null) return;
+        if (sr == null)
+        {
+            return;
+        }
+
         if (isGreen && greenSprite != null)
+        {
             sr.sprite = greenSprite;
+        }
         else if (!isGreen && redSprite != null)
+        {
             sr.sprite = redSprite;
+        }
     }
     private void Update()
     {
         if (player == null || box == null)
+        {
             return;
+        }
         if (!isGreen && !handledThisRed)
         {
             if (box.bounds.Contains(player.position))
             {
                 HandleRedViolation();
-                handledThisRed = true; 
+                handledThisRed = true;
             }
         }
     }
     private void HandleRedViolation()
     {
         redViolations++;
+
         if (redViolations == 1)
         {
             ApplyFine(firstRedFine);
@@ -96,6 +97,7 @@ public class TrafficLightController : MonoBehaviour
             StopPlayerForSeconds(stopDuration);
         }
     }
+
     private void ApplyFine(int amount)
     {
         if (MoneyManager.Instance == null)
@@ -133,7 +135,10 @@ public class TrafficLightController : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         BoxCollider2D b = GetComponent<BoxCollider2D>();
-        if (b == null) return;
+        if (b == null)
+        {
+            return;
+        }
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(b.bounds.center, b.bounds.size);
     }

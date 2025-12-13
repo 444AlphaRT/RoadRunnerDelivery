@@ -97,17 +97,22 @@ public class PlayerController : MonoBehaviour
     {
         int fuelLeft = maxDeliveriesPerTank - deliveriesOnCurrentTank;
         if (fuelLeft >= maxDeliveriesPerTank)
+        {
             return;
+        }
         int cost;
         if (fuelLeft == 0)
+        {
             cost = refuelCostEmpty;
+        }
         else if (fuelLeft == 1)
-        cost = refuelCostOneLeft;
-        cost = refuelCostEmpty;
-        else if (fuelLeft == 1)
+        {
             cost = refuelCostOneLeft;
+        }
         else
+        {
             return;
+        }
         if (MoneyManager.Instance == null)
         {
             Debug.LogWarning("MoneyManager.Instance is NULL!");
@@ -122,4 +127,5 @@ public class PlayerController : MonoBehaviour
         Refuel();
         Debug.Log($"Refueled by paying {cost} coins.");
     }
+
 }

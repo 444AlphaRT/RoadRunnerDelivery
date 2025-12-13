@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,6 +12,15 @@ public class PlayerController : MonoBehaviour
     [Header("Delivery State")]
     public bool HasPackage = false;          // Whether the player is currently holding a package
     public int deliveriesCompleted = 0;      // Total number of completed deliveries
+
+    [Header("Fuel Settings")]
+    public int maxDeliveriesPerTank = 2;     
+    public bool outOfFuel = false;          
+    private int deliveriesOnCurrentTank = 0; 
+
+    [Header("Refuel Settings")]
+    public int refuelCostEmpty = 10;          // Cost when fuel is empty (0)
+    public int refuelCostOneLeft = 5;         // Cost when fuel is 1
 
     private Vector2 inputDirection;
     private Rigidbody2D rb;
@@ -32,14 +41,20 @@ public class PlayerController : MonoBehaviour
         float vertical = Input.GetAxisRaw("Vertical");
 
         inputDirection = new Vector2(horizontal, vertical).normalized;
+
+        // --- Refuel by pressing E ---
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            TryRefuelByKey();
+        }
     }
 
     private void FixedUpdate()
     {
         if (rb == null) return;
 
-        // Stop movement if not allowed yet
-        if (!canMove)
+        // Stop movement if not allowed or out of fuel
+        if (!canMove || outOfFuel)
         {
             rb.linearVelocity = Vector2.zero;
             return;
@@ -74,5 +89,69 @@ public class PlayerController : MonoBehaviour
         HasPackage = false;
         deliveriesCompleted++;
         Debug.Log("Delivered package. Total deliveries: " + deliveriesCompleted);
+
+        // --- Fuel usage per delivery ---
+        deliveriesOnCurrentTank++;
+
+        if (FuelManager.Instance != null)
+        {
+            FuelManager.Instance.UseFuel(1);
+        }
+
+        if (deliveriesOnCurrentTank >= maxDeliveriesPerTank)
+        {
+            outOfFuel = true;
+            Debug.Log("Out of fuel! Press E to refuel.");
+        }
+    }
+
+    public void Refuel()
+    {
+        deliveriesOnCurrentTank = 0;
+        outOfFuel = false;
+
+        if (FuelManager.Instance != null)
+        {
+            FuelManager.Instance.SetFuel(maxDeliveriesPerTank);
+        }
+
+        Debug.Log("Refueled! Tank reset.");
+    }
+
+    // --- Refuel logic with different prices ---
+    private void TryRefuelByKey()
+    {
+        // כמה דלק נשאר בפועל
+        int fuelLeft = maxDeliveriesPerTank - deliveriesOnCurrentTank;
+
+        // אם המיכל מלא – אין מה לתדלק
+        if (fuelLeft >= maxDeliveriesPerTank)
+            return;
+
+        int cost;
+
+        if (fuelLeft == 0)
+            cost = refuelCostEmpty;      // 10 מטבעות
+        else if (fuelLeft == 1)
+            cost = refuelCostOneLeft;    // 5 מטבעות
+        else
+            return;
+
+        if (MoneyManager.Instance == null)
+        {
+            Debug.LogWarning("MoneyManager.Instance is NULL!");
+            return;
+        }
+
+        bool paid = MoneyManager.Instance.TrySpend(cost);
+
+        if (!paid)
+        {
+            Debug.Log("Not enough money to refuel.");
+            return;
+        }
+
+        Refuel();
+        Debug.Log($"Refueled by paying {cost} coins.");
     }
 }

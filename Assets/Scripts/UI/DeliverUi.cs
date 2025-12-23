@@ -12,9 +12,10 @@ public class DeliveryUI : MonoBehaviour
     {
         if (player == null) return;
 
-        string status = player.HasPackage ? "Yes" : "No";
-        hasPackageText.text = "Package: " + status;
+        // Show carried packages count (Level 3)
+        hasPackageText.text = $"Packages: {player.packagesHeld}/{player.maxPackages}";
 
+        // Show completed deliveries
         deliveriesText.text = "Deliveries: " + player.deliveriesCompleted;
     }
 }

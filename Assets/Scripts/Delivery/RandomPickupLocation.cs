@@ -3,12 +3,15 @@ using UnityEngine;
 public class RandomPickupLocation : MonoBehaviour
 {
     [Header("Possible pickup spots (Pizza, Burger, etc.)")]
-    [SerializeField] private Transform[] pickupSpots;   // PizzaSpot, BurgerSpot, ...
+    [SerializeField] private Transform[] pickupSpots;
 
     [Header("Optional: icons that match each spot index")]
-    [SerializeField] private GameObject[] spotIcons;    // PizzaIcon, BurgerIcon, ...
+    [SerializeField] private GameObject[] spotIcons;
 
-    private int lastIndex = -1; // Remember last chosen index
+    [Header("Behavior")]
+    [SerializeField] private bool avoidRepeatingLastSpot = true;
+
+    private int lastIndex = -1;
 
     private void Start()
     {
@@ -23,41 +26,78 @@ public class RandomPickupLocation : MonoBehaviour
             return;
         }
 
-        int newIndex;
+        int newIndex = ChooseRandomIndex();
+        if (newIndex < 0) return;
 
-        // If there is only one spot, always use it
+        ApplyIndex(newIndex);
+    }
+
+    public void SetSpotIndex(int index)
+    {
+        if (pickupSpots == null || pickupSpots.Length == 0)
+        {
+            Debug.LogWarning("RandomPickupLocation: No pickup spots assigned.");
+            return;
+        }
+
+        if (index < 0 || index >= pickupSpots.Length)
+        {
+            Debug.LogWarning($"RandomPickupLocation: Invalid index {index}.");
+            return;
+        }
+
+        if (pickupSpots[index] == null)
+        {
+            Debug.LogWarning($"RandomPickupLocation: pickupSpots[{index}] is NULL.");
+            return;
+        }
+
+        ApplyIndex(index);
+    }
+
+    private int ChooseRandomIndex()
+    {
         if (pickupSpots.Length == 1)
         {
-            newIndex = 0;
-        }
-        else
-        {
-            // Choose an index that is different from lastIndex
-            newIndex = Random.Range(0, pickupSpots.Length - 1);
-
-            // If we hit or pass lastIndex, shift by one
-            if (lastIndex != -1 && newIndex >= lastIndex)
-            {
-                newIndex++;
-            }
+            if (pickupSpots[0] == null) return -1;
+            return 0;
         }
 
-        lastIndex = newIndex;
-        Transform chosenSpot = pickupSpots[newIndex];
-
-        // Move this PickupPoint to the chosen spot
-        transform.position = chosenSpot.position;
-
-        // Optional: turn on only the icon that matches the chosen spot
-        if (spotIcons != null && spotIcons.Length == pickupSpots.Length)
+        const int maxAttempts = 25;
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
-            for (int i = 0; i < spotIcons.Length; i++)
-            {
-                if (spotIcons[i] != null)
-                {
-                    spotIcons[i].SetActive(i == newIndex);
-                }
-            }
+            int idx = Random.Range(0, pickupSpots.Length);
+
+            if (pickupSpots[idx] == null) continue;
+            if (avoidRepeatingLastSpot && idx == lastIndex) continue;
+
+            return idx;
+        }
+
+        for (int i = 0; i < pickupSpots.Length; i++)
+        {
+            if (pickupSpots[i] != null) return i;
+        }
+
+        return -1;
+    }
+
+    private void ApplyIndex(int index)
+    {
+        lastIndex = index;
+        transform.position = pickupSpots[index].position;
+        UpdateIcons(index);
+    }
+
+    private void UpdateIcons(int activeIndex)
+    {
+        if (spotIcons == null || spotIcons.Length == 0) return;
+
+        int count = Mathf.Min(spotIcons.Length, pickupSpots.Length);
+        for (int i = 0; i < count; i++)
+        {
+            if (spotIcons[i] == null) continue;
+            spotIcons[i].SetActive(i == activeIndex);
         }
     }
 }

@@ -152,6 +152,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrafficLightController
   greenDuration: 3
   redDuration: 3
-  redLightFine: 3
+  firstRedFine: 3
+  secondRedFine: 6
+  stopDuration: 5
   greenSprite: {fileID: 7661236339456847922, guid: 6323f72d22a735441a72bf16bbe8d7aa, type: 3}
   redSprite: {fileID: 2558310412468410847, guid: 1c5d1c1c5bc5a4246aa92e8f19174c55, type: 3}

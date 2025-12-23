@@ -1,0 +1,59 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using TMPro;
+
+public class StageSelectUI : MonoBehaviour
+{
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI selectedStageText;
+
+    // Holds the scene name of the selected stage
+    private string selectedSceneName = null;
+
+    private void Start()
+    {
+        UpdateSelectedStageText();
+    }
+
+    /// <summary>
+    /// Called when a stage button is clicked.
+    /// </summary>
+    /// <param name="sceneName">Scene name to load later</param>
+    public void SelectStage(string sceneName)
+    {
+        selectedSceneName = sceneName;
+        UpdateSelectedStageText();
+    }
+
+    /// <summary>
+    /// Called when the PLAY button is pressed.
+    /// Loads the selected stage.
+    /// </summary>
+    public void PlaySelectedStage()
+    {
+        if (string.IsNullOrEmpty(selectedSceneName))
+        {
+            Debug.Log("StageSelectUI: No stage selected!");
+            return;
+        }
+
+        // Make sure time scale is normal
+        Time.timeScale = 1f;
+
+        SceneManager.LoadScene(selectedSceneName);
+    }
+
+    /// <summary>
+    /// Updates the UI text showing the selected stage.
+    /// </summary>
+    private void UpdateSelectedStageText()
+    {
+        if (selectedStageText == null)
+            return;
+
+        if (string.IsNullOrEmpty(selectedSceneName))
+            selectedStageText.text = "Select a stage";
+        else
+            selectedStageText.text = "Selected: " + selectedSceneName;
+    }
+}

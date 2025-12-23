@@ -20,7 +20,7 @@ public class MoneyManager : MonoBehaviour
 
     private void Awake()
     {
-        // Simple singleton pattern
+        // Singleton + keep between scenes
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -28,10 +28,12 @@ public class MoneyManager : MonoBehaviour
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Start()
     {
+        // Initialize only once (when created)
         CurrentMoney = startingMoney;
         IncomeMultiplier = baseIncomeMultiplier;
         UpdateMoneyText();
@@ -40,13 +42,11 @@ public class MoneyManager : MonoBehaviour
     // --- Add money (affected by multiplier) ---
     public void AddMoney(int baseAmount)
     {
-        // baseAmount is the reward calculated in DeliveryPoint
         float scaled = baseAmount * IncomeMultiplier;
         int finalAmount = Mathf.RoundToInt(scaled);
 
         CurrentMoney += finalAmount;
-        if (CurrentMoney < 0)
-            CurrentMoney = 0;
+        if (CurrentMoney < 0) CurrentMoney = 0;
 
         UpdateMoneyText();
     }
@@ -55,9 +55,7 @@ public class MoneyManager : MonoBehaviour
     public bool TrySpend(int amount)
     {
         if (CurrentMoney < amount)
-        {
             return false;
-        }
 
         CurrentMoney -= amount;
         UpdateMoneyText();
@@ -68,20 +66,27 @@ public class MoneyManager : MonoBehaviour
     public void IncreaseIncomeMultiplier(float delta)
     {
         IncomeMultiplier = Mathf.Max(minIncomeMultiplier, IncomeMultiplier + delta);
+        // Optional: UpdateMoneyText(); // not needed unless you show multiplier
     }
 
-    // --- Force-set money (debug only) ---
+    // --- Force-set money ---
     public void SetMoney(int amount)
     {
         CurrentMoney = Mathf.Max(0, amount);
         UpdateMoneyText();
     }
 
+    // --- RESET for Try Again / Main Menu ---
+    public void ResetToDefaults()
+    {
+        CurrentMoney = startingMoney;
+        IncomeMultiplier = baseIncomeMultiplier;
+        UpdateMoneyText();
+    }
+
     private void UpdateMoneyText()
     {
         if (moneyText != null)
-        {
             moneyText.text = "x " + CurrentMoney;
-        }
     }
 }

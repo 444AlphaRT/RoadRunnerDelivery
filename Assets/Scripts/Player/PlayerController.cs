@@ -1,121 +1,262 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    // =========================
+    // Movement
+    // =========================
     [Header("Movement Settings")]
-    public float moveSpeed = 5f;   // Base movement speed
-    public float maxSpeed = 8f;    // Maximum allowed speed
+    public float moveSpeed = 5f;   // Base acceleration speed
+    public float maxSpeed = 8f;    // Absolute maximum speed
+
+    [Header("Rotation (Motorcycle)")]
+    [Tooltip("If your sprite faces UP by default, keep this at -90. If it faces RIGHT, set it to 0.")]
+    public float spriteAngleOffset = -90f;
+
+    [Tooltip("Minimum speed required before we rotate the bike (prevents jitter when nearly stopped).")]
+    public float rotateMinSpeed = 0.05f;
+
+    // =========================
+    // Gameplay State
+    // =========================
     [Header("Gameplay State")]
-    public bool canMove = false;   // Whether the player is allowed to move
+    public bool canMove = false;   // If false, player movement is completely disabled
+
+    // =========================
+    // Delivery State
+    // =========================
     [Header("Delivery State")]
-    public bool HasPackage = false;          // Whether the player is currently holding a package
-    public int deliveriesCompleted = 0;      // Total number of completed deliveries
+    public bool HasPackage = false;      // Kept for compatibility with existing scripts (Minimap, Dropoff checks, etc.)
+    public int deliveriesCompleted = 0;  // Total number of successful deliveries
+
+    [Header("Package Carrying")]
+    public int maxPackages = 2;          // Maximum number of packages the player can carry at once (Level 3 feature)
+    public int packagesHeld = 0;         // Current number of packages held (0..maxPackages)
+
+    // =========================
+    // Fuel System
+    // =========================
     [Header("Fuel Settings")]
-    public int maxDeliveriesPerTank = 2;
-    public bool outOfFuel = false;
+    public int maxDeliveriesPerTank = 2;  // How many deliveries can be done per fuel tank
+    public bool outOfFuel = false;        // True when fuel is empty
     private int deliveriesOnCurrentTank = 0;
+
+    // =========================
+    // Refuel Costs
+    // =========================
     [Header("Refuel Settings")]
-    public int refuelCostEmpty = 10;          // Cost when fuel is empty (0)
-    public int refuelCostOneLeft = 5;         // Cost when fuel is 1
+    public int refuelCostEmpty = 10;      // Cost when fuel is completely empty
+    public int refuelCostOneLeft = 5;     // Cost when one delivery remains
+
+    // =========================
+    // Speed Zone System (supports overlapping zones) - if still used elsewhere
+    // =========================
+    private readonly Dictionary<object, float> activeSpeedLimits = new();
+    private float? cachedSpeedLimit = null; // Cached minimum speed limit from all active zones
+
+    // =========================
+    // Internal State
+    // =========================
     private Vector2 inputDirection;
     private Rigidbody2D rb;
 
+    // =========================
+    // Unity Lifecycle
+    // =========================
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
 
         if (rb == null)
         {
-            Debug.LogError("PlayerController: No Rigidbody2D found on the Player object.");
+            Debug.LogError("PlayerController: Rigidbody2D is missing!");
         }
+
+        // Sync the legacy bool with the new package counter (important on scene start)
+        HasPackage = packagesHeld > 0;
     }
 
     private void Update()
     {
+        // Read raw input (no smoothing)
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
 
         inputDirection = new Vector2(horizontal, vertical).normalized;
+
+        // Manual refuel key
         if (Input.GetKeyDown(KeyCode.E))
         {
             TryRefuelByKey();
         }
     }
+
     private void FixedUpdate()
     {
         if (rb == null) return;
+
+        // Stop movement if not allowed or out of fuel
         if (!canMove || outOfFuel)
         {
             rb.linearVelocity = Vector2.zero;
             return;
         }
+
+        // Determine current max speed (speed zones override global maxSpeed)
+        float currentMaxSpeed = cachedSpeedLimit.HasValue
+            ? Mathf.Min(maxSpeed, cachedSpeedLimit.Value)
+            : maxSpeed;
+
+        // Apply movement (top-down style: velocity directly from input)
         Vector2 desiredVelocity = inputDirection * moveSpeed;
-        Vector2 clampedVelocity = Vector2.ClampMagnitude(desiredVelocity, maxSpeed);
+        Vector2 clampedVelocity = Vector2.ClampMagnitude(desiredVelocity, currentMaxSpeed);
         rb.linearVelocity = clampedVelocity;
-    }
-    public void PickUpPackage()
-    {
-        if (HasPackage)
+
+        // =========================
+        // Rotation fix:
+        // Rotate the bike to face the direction it's moving.
+        // This prevents "fighting" / spinning when changing directions.
+        // =========================
+        if (rb.linearVelocity.sqrMagnitude > rotateMinSpeed * rotateMinSpeed)
         {
-            Debug.Log("Already holding a package.");
+            // Angle from velocity vector (in degrees)
+            float angle = Mathf.Atan2(rb.linearVelocity.y, rb.linearVelocity.x) * Mathf.Rad2Deg;
+
+            // Apply offset based on how the sprite is drawn
+            rb.rotation = angle + spriteAngleOffset;
+        }
+    }
+
+    // =========================
+    // Speed Zone API (only needed if you still use speed-limiting zones)
+    // =========================
+
+    // Called when entering a SpeedZone that limits speed (legacy system)
+    public void AddSpeedLimit(object source, float limit)
+    {
+        if (source == null) return;
+
+        activeSpeedLimits[source] = limit;
+        RecalculateSpeedLimit();
+    }
+
+    // Called when exiting a SpeedZone that limits speed (legacy system)
+    public void RemoveSpeedLimit(object source)
+    {
+        if (source == null) return;
+
+        if (activeSpeedLimits.Remove(source))
+        {
+            RecalculateSpeedLimit();
+        }
+    }
+
+    // Recalculate the lowest active speed limit
+    private void RecalculateSpeedLimit()
+    {
+        if (activeSpeedLimits.Count == 0)
+        {
+            cachedSpeedLimit = null;
             return;
         }
-        HasPackage = true;
-        Debug.Log("Picked up package");
+
+        float min = float.MaxValue;
+        foreach (float limit in activeSpeedLimits.Values)
+        {
+            if (limit < min) min = limit;
+        }
+
+        cachedSpeedLimit = min;
     }
+
+    // =========================
+    // Speedometer Accessors (UI)
+    // =========================
+    public float CurrentSpeed
+    {
+        get => rb == null ? 0f : rb.linearVelocity.magnitude;
+    }
+
+    public float CurrentSpeedLimit
+    {
+        get => cachedSpeedLimit.HasValue
+            ? Mathf.Min(maxSpeed, cachedSpeedLimit.Value)
+            : maxSpeed;
+    }
+
+    // =========================
+    // Delivery Logic (UPDATED for multi-package)
+    // =========================
+    public void PickUpPackage()
+    {
+        if (packagesHeld >= maxPackages)
+        {
+            Debug.Log("Cannot pick up: already at max packages.");
+            return;
+        }
+
+        packagesHeld++;
+        HasPackage = packagesHeld > 0;
+
+        Debug.Log($"Picked up 1 package. Held: {packagesHeld}/{maxPackages}");
+    }
+
     public void DeliverPackage()
     {
-        if (!HasPackage)
+        if (packagesHeld <= 0)
         {
             Debug.Log("No package to deliver.");
             return;
         }
-        HasPackage = false;
+
+        packagesHeld--;
+        HasPackage = packagesHeld > 0;
+
         deliveriesCompleted++;
-        Debug.Log("Delivered package. Total deliveries: " + deliveriesCompleted);
         deliveriesOnCurrentTank++;
 
-        if (FuelManager.Instance != null)
-        {
-            FuelManager.Instance.UseFuel(1);
-        }
+        Debug.Log($"Delivered 1 package. Held: {packagesHeld}/{maxPackages}. Total deliveries: {deliveriesCompleted}");
+
+        FuelManager.Instance?.UseFuel(1);
+
         if (deliveriesOnCurrentTank >= maxDeliveriesPerTank)
         {
             outOfFuel = true;
             Debug.Log("Out of fuel! Press E to refuel.");
         }
     }
+
+    // =========================
+    // Refueling
+    // =========================
     public void Refuel()
     {
         deliveriesOnCurrentTank = 0;
         outOfFuel = false;
-        if (FuelManager.Instance != null)
-        {
-            FuelManager.Instance.SetFuel(maxDeliveriesPerTank);
-        }
-        Debug.Log("Refueled! Tank reset.");
+
+        FuelManager.Instance?.SetFuel(maxDeliveriesPerTank);
+
+        Debug.Log("Refueled. Tank reset.");
     }
+
     private void TryRefuelByKey()
     {
         int fuelLeft = maxDeliveriesPerTank - deliveriesOnCurrentTank;
-        if (fuelLeft >= maxDeliveriesPerTank)
-            return;
-        int cost;
-        if (fuelLeft == 0)
-            cost = refuelCostEmpty;
-        else if (fuelLeft == 1)
-            cost = refuelCostOneLeft;
-        else
-            return;
+        if (fuelLeft >= maxDeliveriesPerTank) return;
+
+        int cost = fuelLeft == 0 ? refuelCostEmpty :
+                   fuelLeft == 1 ? refuelCostOneLeft : -1;
+
+        if (cost < 0) return;
+
         if (MoneyManager.Instance == null)
         {
             Debug.LogWarning("MoneyManager.Instance is NULL!");
             return;
         }
 
-        bool paid = MoneyManager.Instance.TrySpend(cost);
-
-        if (!paid)
+        if (!MoneyManager.Instance.TrySpend(cost))
         {
             Debug.Log("Not enough money to refuel.");
             return;

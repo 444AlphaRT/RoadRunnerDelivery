@@ -5955,7 +5955,7 @@ GameObject:
   - component: {fileID: 1204995161}
   m_Layer: 5
   m_Name: CoinAmmount
-  m_TagString: Untagged
+  m_TagString: MoneyText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10612,7 +10612,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoneyManager
   moneyText: {fileID: 1204995161}
-  startingMoney: 0
+  startingMoney: 7
   baseIncomeMultiplier: 1
   minIncomeMultiplier: 0.1
 --- !u!4 &2120397612

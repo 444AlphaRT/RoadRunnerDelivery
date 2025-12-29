@@ -167,6 +167,12 @@ public class DeliveryPoint : MonoBehaviour
             MoneyManager.Instance.AddMoney(coins);
         }
 
+        // Save stats (run + total) if PlayerStatsManager exists
+        if (PlayerStatsManager.Instance != null)
+        {
+            PlayerStatsManager.Instance.RegisterDelivery(coins);
+        }
+
         Debug.Log($"Delivery complete → distance={distance:F1}, time={time:F1}s, coins={coins}");
 
         // Move this DropoffPoint to a new random building
@@ -194,8 +200,7 @@ public class DeliveryPoint : MonoBehaviour
         if (time < minTimeSafe)
             time = minTimeSafe;
 
-        // ---------- 1) Base pay from distance ----------
-
+        // 1) Base pay from distance
         float basePay = distance * basePayPerUnit;
 
         bool isFarDelivery = distance >= farDistanceThreshold;
@@ -204,40 +209,33 @@ public class DeliveryPoint : MonoBehaviour
             basePay *= farDistanceMultiplier;
         }
 
-        // ---------- 2) Tip based on speed ----------
-
-        // Expected time if driving at "expectedSpeedUnitsPerSecond"
+        // 2) Tip based on speed
         float expectedTime = distance / expectedSpeedUnitsPerSecond;
-        float ratio = time / expectedTime; // < 1 = faster than expected, > 1 = slower
+        float ratio = time / expectedTime; // < 1 = faster, > 1 = slower
 
         float tipRate = 0f;
 
         if (ratio <= tipFastThresholdRatio)
         {
-            // Very fast delivery
             tipRate = tipRateFast;
         }
         else if (ratio <= tipNormalThresholdRatio)
         {
-            // Around the expected time
             tipRate = tipRateNormal;
         }
         else if (ratio <= tipSlowThresholdRatio)
         {
-            // A bit slow → maybe a small tip, depending on customer mood
             bool customerNice = Random.value < niceCustomerProbability;
             tipRate = customerNice ? tipRateSlow : 0f;
         }
         else
         {
-            // Very slow → no tip
             tipRate = 0f;
         }
 
         float totalPay = basePay * (1f + tipRate);
 
-        // ---------- 3) Clamp to a reasonable range ----------
-
+        // 3) Clamp to a reasonable range
         int coins = Mathf.RoundToInt(totalPay);
         coins = Mathf.Clamp(coins, minCoinsPerDelivery, maxCoinsPerDelivery);
 

@@ -2437,7 +2437,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &420709946
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3391,7 +3391,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &670096332
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3775,7 +3775,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &786816397
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5197,7 +5197,7 @@ GameObject:
   - component: {fileID: 984724636}
   m_Layer: 0
   m_Name: FuelManager
-  m_TagString: Untagged
+  m_TagString: FuelText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5215,7 +5215,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FuelManager
   fuelText: {fileID: 1819387519}
-  startingFuel: 2
+  fuelTextTag: FuelText
+  startingFuel: 5
+  maxFuel: 10
+  deliveriesPerFuelUnit: 3
+  refuelUnitsAmount: 5
+  refuelCostCoins: 5
+  noMoneyFreezeSeconds: 5
+  player: {fileID: 0}
 --- !u!4 &984724637
 Transform:
   m_ObjectHideFlags: 0
@@ -6586,11 +6593,11 @@ GameObject:
   - component: {fileID: 1204995161}
   m_Layer: 5
   m_Name: CoinAmmount
-  m_TagString: Untagged
+  m_TagString: MoneyText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1204995161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6822,7 +6829,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1221445269
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7981,7 +7988,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1401349156
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9067,6 +9074,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f2fed5ee0cc1435186f9e8bd0e3269c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Waypoint
+--- !u!1 &1658356971
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1658356973}
+  - component: {fileID: 1658356972}
+  m_Layer: 0
+  m_Name: PenaltyManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1658356972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658356971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bf54b9ad642a416380d5b5d613fc0ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PenaltyManager
+  player: {fileID: 666474422}
+  penaltyUI: {fileID: 758524856}
+  gameOverUI: {fileID: 1130181735}
+  maxViolationsBeforeGameOver: 5
+  firstTimeoutSeconds: 15
+  secondTimeoutSeconds: 30
+  maxUnpaidStrikes: 3
+--- !u!4 &1658356973
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658356971}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1107.0751, y: 370.89136, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1659123099
 GameObject:
   m_ObjectHideFlags: 0
@@ -10037,11 +10095,11 @@ GameObject:
   - component: {fileID: 1819387519}
   m_Layer: 5
   m_Name: FuelUI
-  m_TagString: Untagged
+  m_TagString: FuelText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1819387518
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10081,7 +10139,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: X 2
+  m_text: X 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10449,7 +10507,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1876552568
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11769,7 +11827,7 @@ GameObject:
   - component: {fileID: 2120397611}
   m_Layer: 0
   m_Name: MoneyManager
-  m_TagString: Untagged
+  m_TagString: MoneyText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -11787,7 +11845,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoneyManager
   moneyText: {fileID: 1204995161}
-  startingMoney: 20
+  startingMoney: 7
   baseIncomeMultiplier: 1
   minIncomeMultiplier: 0.1
 --- !u!4 &2120397612
@@ -11915,19 +11973,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3772170974967049871, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.10294828
+      value: 0.11903909
       objectReference: {fileID: 0}
     - target: {fileID: 3772170974967049871, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.12948276
+      value: 0.13085528
       objectReference: {fileID: 0}
     - target: {fileID: 3772170974967049871, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -11.485
+      value: -11.4028
       objectReference: {fileID: 0}
     - target: {fileID: 3772170974967049871, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.5809
+      value: 3.5706
       objectReference: {fileID: 0}
     - target: {fileID: 3772170974967049871, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
       propertyPath: m_LocalPosition.z
@@ -12077,3 +12135,4 @@ SceneRoots:
   - {fileID: 1508885880}
   - {fileID: 1080897722}
   - {fileID: 1082812650}
+  - {fileID: 1658356973}

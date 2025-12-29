@@ -17,6 +17,7 @@ public class StageSelectUI : MonoBehaviour
 
     /// <summary>
     /// Called when a stage button is clicked.
+    /// Stores the selected scene name for later.
     /// </summary>
     /// <param name="sceneName">Scene name to load later</param>
     public void SelectStage(string sceneName)
@@ -27,7 +28,9 @@ public class StageSelectUI : MonoBehaviour
 
     /// <summary>
     /// Called when the PLAY button is pressed.
-    /// Loads the selected stage.
+    /// Rule:
+    /// - Starting from the menu means a NEW RUN -> money should reset to 0.
+    /// - Stage-to-stage progression should NOT reset money (handled elsewhere).
     /// </summary>
     public void PlaySelectedStage()
     {
@@ -40,6 +43,17 @@ public class StageSelectUI : MonoBehaviour
         // Make sure time scale is normal
         Time.timeScale = 1f;
 
+        // Mark this as a NEW RUN started from the menu (Money resets on next scene load)
+        if (RunContext.Instance != null)
+        {
+            RunContext.Instance.StartNewRun();
+        }
+        else
+        {
+            Debug.LogWarning("StageSelectUI: RunContext.Instance is missing! Money may not reset correctly.");
+        }
+
+        // Load the selected stage scene
         SceneManager.LoadScene(selectedSceneName);
     }
 

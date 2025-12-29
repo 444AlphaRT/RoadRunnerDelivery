@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 public class MoneyManager : MonoBehaviour
@@ -6,17 +7,19 @@ public class MoneyManager : MonoBehaviour
     public static MoneyManager Instance { get; private set; }
 
     [Header("UI")]
-    [SerializeField] private TextMeshProUGUI moneyText;   // UI: "x 12"
+    [SerializeField] private TextMeshProUGUI moneyText;   // will be re-found each scene by tag
 
     [Header("Money Settings")]
     [SerializeField] private int startingMoney = 0;
 
     [Header("Income Multiplier")]
-    [SerializeField] private float baseIncomeMultiplier = 1f;   // 1.0 = normal
-    [SerializeField] private float minIncomeMultiplier = 0.1f;  // safety lower bound
+    [SerializeField] private float baseIncomeMultiplier = 1f;
+    [SerializeField] private float minIncomeMultiplier = 0.1f;
 
     public int CurrentMoney { get; private set; }
     public float IncomeMultiplier { get; private set; }
+
+    private bool initialized = false;
 
     private void Awake()
     {
@@ -29,13 +32,44 @@ public class MoneyManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Reconnect UI every time a new scene loads
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void Start()
     {
-        // Initialize only once (when created)
+        // Initialize only once in the whole run
+        if (initialized) return;
+        initialized = true;
+
         CurrentMoney = startingMoney;
         IncomeMultiplier = baseIncomeMultiplier;
+        UpdateMoneyText();
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Find the new scene's money text by tag
+        GameObject go = GameObject.FindGameObjectWithTag("MoneyText");
+        if (go != null)
+        {
+            moneyText = go.GetComponent<TextMeshProUGUI>();
+        }
+
+        // If started from menu -> reset money (RunContext flag)
+        if (RunContext.Instance != null && RunContext.Instance.ConsumeMoneyResetFlag())
+        {
+            CurrentMoney = 0;
+            IncomeMultiplier = baseIncomeMultiplier;
+        }
+
         UpdateMoneyText();
     }
 
@@ -66,17 +100,14 @@ public class MoneyManager : MonoBehaviour
     public void IncreaseIncomeMultiplier(float delta)
     {
         IncomeMultiplier = Mathf.Max(minIncomeMultiplier, IncomeMultiplier + delta);
-        // Optional: UpdateMoneyText(); // not needed unless you show multiplier
     }
 
-    // --- Force-set money ---
     public void SetMoney(int amount)
     {
         CurrentMoney = Mathf.Max(0, amount);
         UpdateMoneyText();
     }
 
-    // --- RESET for Try Again / Main Menu ---
     public void ResetToDefaults()
     {
         CurrentMoney = startingMoney;
@@ -87,6 +118,8 @@ public class MoneyManager : MonoBehaviour
     private void UpdateMoneyText()
     {
         if (moneyText != null)
+        {
             moneyText.text = "x " + CurrentMoney;
+        }
     }
 }

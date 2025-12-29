@@ -1,11 +1,11 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PenaltyManager : MonoBehaviour
 {
-    public static PenaltyManager Instance;
+    public static PenaltyManager Instance { get; private set; }
 
-    // Added LateDelivery so it won't mix with Speed/RedLight strikes
     public enum ViolationType
     {
         Speed,
@@ -13,139 +13,156 @@ public class PenaltyManager : MonoBehaviour
         LateDelivery
     }
 
-    [Header("References")]
+    [Header("References (auto-found each scene)")]
     [SerializeField] private PlayerController player;
     [SerializeField] private PenaltyOverlayUI penaltyUI;
+    [SerializeField] private GameOverUI gameOverUI;
 
-    [Header("Global rule")]
-    [Tooltip("If total tickets reach this number -> game over.")]
-    [SerializeField] private int maxTicketsTotal = 5;
+    [Header("GAME OVER (total violations)")]
+    [SerializeField] private int maxViolationsBeforeGameOver = 3;
 
     [Header("No-money timeouts")]
-    [Tooltip("Freeze duration on 1st unpaid strike (per type).")]
     [SerializeField] private float firstTimeoutSeconds = 15f;
-
-    [Tooltip("Freeze duration on 2nd unpaid strike (per type).")]
     [SerializeField] private float secondTimeoutSeconds = 30f;
 
     [Header("No-money strikes (per violation type)")]
-    [Tooltip("3rd unpaid strike (per type) -> game over.")]
     [SerializeField] private int maxUnpaidStrikes = 3;
 
-    private int ticketsTotal = 0;
+    private int violationsTotal = 0;
 
-    // Separate unpaid counters per type
     private int speedUnpaidStrikes = 0;
     private int redUnpaidStrikes = 0;
     private int lateUnpaidStrikes = 0;
 
-    private Coroutine stopCoroutine;
-    private bool isStopping = false;
+    private Coroutine freezeCoroutine;
+    private bool isGameOver = false;
 
     private void Awake()
     {
-        if (Instance != null) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void Start()
     {
-        if (player == null) player = FindFirstObjectByType<PlayerController>();
-        if (penaltyUI == null) penaltyUI = FindFirstObjectByType<PenaltyOverlayUI>();
+        StartCoroutine(RebindNextFrame());
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        StartCoroutine(RebindNextFrame());
+    }
+
+    private IEnumerator RebindNextFrame()
+    {
+        // wait one frame so scene objects are fully created/enabled
+        yield return null;
+        RebindSceneReferences();
         penaltyUI?.Hide();
     }
 
-    /// <summary>
-    /// Use this for all penalties (speed / red light / late delivery).
-    /// It will:
-    /// - count a ticket (global)
-    /// - attempt to pay
-    /// - if cannot pay: increment unpaid strikes for THIS type and freeze with UI timer
-    /// </summary>
+    private void RebindSceneReferences()
+    {
+        // include inactive so UI can be found even if root panel is disabled
+        player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
+        penaltyUI = FindFirstObjectByType<PenaltyOverlayUI>(FindObjectsInactive.Include);
+        gameOverUI = FindFirstObjectByType<GameOverUI>(FindObjectsInactive.Include);
+
+        if (player == null)
+            Debug.LogWarning("PenaltyManager: PlayerController not found in this scene.");
+        if (penaltyUI == null)
+            Debug.LogWarning("PenaltyManager: PenaltyOverlayUI not found in this scene.");
+        if (gameOverUI == null)
+            Debug.LogWarning("PenaltyManager: GameOverUI not found in this scene.");
+    }
+
     public void IssueTicket(ViolationType type, int fineAmount, string reason)
     {
-        // Prevent stacking freezes (avoids "stuck forever" issues)
-        if (isStopping) return;
+        if (isGameOver) return;
 
-        // Count total tickets
-        ticketsTotal++;
-
-        // Global rule
-        if (ticketsTotal >= maxTicketsTotal)
+        // Always count the violation (paid or not)
+        violationsTotal++;
+        if (violationsTotal >= maxViolationsBeforeGameOver)
         {
-            Debug.Log("GAME OVER: Too many tickets (global).");
-            // GameOverManager.Instance?.TriggerGameOver("Too many tickets!");
+            TriggerGameOver("Too many violations.");
             return;
         }
+
+        // If missing refs in this scene, try to bind again right now
+        if (player == null || penaltyUI == null || gameOverUI == null)
+            RebindSceneReferences();
 
         if (MoneyManager.Instance == null)
         {
-            Debug.LogWarning("PenaltyManager: MoneyManager.Instance is NULL!");
+            Debug.LogWarning("PenaltyManager: MoneyManager.Instance is NULL (fine cannot be paid).");
+            // still allow freeze / gameover logic if you want,
+            // but right now we just stop here:
             return;
         }
 
-        // Try pay
+        // Try to pay
         bool paid = MoneyManager.Instance.TrySpend(fineAmount);
         if (paid)
-        {
-            // Paid -> no freeze
             return;
-        }
 
-        // No money -> strike + freeze
+        // Unpaid -> strike per type
         int strikes = IncrementUnpaid(type);
-
-        // 3rd unpaid strike for THIS type -> game over
         if (strikes >= maxUnpaidStrikes)
         {
-            Debug.Log($"GAME OVER: {maxUnpaidStrikes} unpaid fines for {type}.");
-            // GameOverManager.Instance?.TriggerGameOver($"Too many unpaid fines: {type}");
+            TriggerGameOver("Too many unpaid fines.");
             return;
         }
 
-        // Freeze duration depends on strike number (1 => first, 2 => second)
+        // Freeze only if we actually have a player to freeze
+        if (player == null)
+        {
+            Debug.LogWarning("PenaltyManager: Player missing, can't freeze. (But violation counted)");
+            return;
+        }
+
         float duration = (strikes == 1) ? firstTimeoutSeconds : secondTimeoutSeconds;
 
-        // Make sure only ONE freeze runs
-        if (stopCoroutine != null) StopCoroutine(stopCoroutine);
-        stopCoroutine = StartCoroutine(FreezeRoutine(duration, reason, strikes));
+        if (freezeCoroutine != null)
+            StopCoroutine(freezeCoroutine);
+
+        freezeCoroutine = StartCoroutine(FreezeRoutine(duration, reason, strikes));
     }
 
     private int IncrementUnpaid(ViolationType type)
     {
         switch (type)
         {
-            case ViolationType.Speed:
-                return ++speedUnpaidStrikes;
-
-            case ViolationType.RedLight:
-                return ++redUnpaidStrikes;
-
-            case ViolationType.LateDelivery:
-                return ++lateUnpaidStrikes;
-
-            default:
-                return 0;
+            case ViolationType.Speed: return ++speedUnpaidStrikes;
+            case ViolationType.RedLight: return ++redUnpaidStrikes;
+            case ViolationType.LateDelivery: return ++lateUnpaidStrikes;
+            default: return 0;
         }
     }
 
     private IEnumerator FreezeRoutine(float seconds, string reason, int strikes)
     {
-        if (player == null)
-        {
-            Debug.LogWarning("PenaltyManager: Player reference missing!");
-            yield break;
-        }
-
-        isStopping = true;
-
         bool prevCanMove = player.canMove;
         player.canMove = false;
 
         float t = seconds;
-        while (t > 0f)
+        while (t > 0f && !isGameOver)
         {
-            penaltyUI?.ShowFreeze(reason, t, strikes, maxUnpaidStrikes);
+            if (penaltyUI != null)
+                penaltyUI.ShowFreeze(reason, t, strikes, maxUnpaidStrikes);
 
             yield return new WaitForSeconds(1f);
             t -= 1f;
@@ -153,10 +170,56 @@ public class PenaltyManager : MonoBehaviour
 
         penaltyUI?.Hide();
 
-        // Restore movement safely
-        player.canMove = prevCanMove;
+        if (!isGameOver)
+            player.canMove = prevCanMove;
 
-        isStopping = false;
-        stopCoroutine = null;
+        freezeCoroutine = null;
+    }
+
+    private void TriggerGameOver(string debugReason)
+    {
+        if (isGameOver) return;
+        isGameOver = true;
+
+        if (freezeCoroutine != null)
+        {
+            StopCoroutine(freezeCoroutine);
+            freezeCoroutine = null;
+        }
+
+        penaltyUI?.Hide();
+
+        Debug.Log("GAME OVER: " + debugReason);
+
+        if (gameOverUI == null)
+            gameOverUI = FindFirstObjectByType<GameOverUI>(FindObjectsInactive.Include);
+
+        if (gameOverUI != null)
+        {
+            gameOverUI.Show();
+        }
+        else
+        {
+            Debug.LogWarning("PenaltyManager: GameOverUI not found, freezing timeScale.");
+            Time.timeScale = 0f;
+        }
+    }
+
+    public void ResetRunState()
+    {
+        violationsTotal = 0;
+        speedUnpaidStrikes = 0;
+        redUnpaidStrikes = 0;
+        lateUnpaidStrikes = 0;
+
+        isGameOver = false;
+
+        if (freezeCoroutine != null)
+        {
+            StopCoroutine(freezeCoroutine);
+            freezeCoroutine = null;
+        }
+
+        penaltyUI?.Hide();
     }
 }

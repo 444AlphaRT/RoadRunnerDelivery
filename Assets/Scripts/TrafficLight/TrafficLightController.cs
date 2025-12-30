@@ -8,9 +8,14 @@ public class TrafficLightController : MonoBehaviour
     [SerializeField] private float greenDuration = 3f;
     [SerializeField] private float redDuration = 3f;
 
-    [Header("Fines")]
-    [SerializeField] private int firstRedFine = 3;
-    [SerializeField] private int secondRedFine = 6;
+    [Header("Fines (local escalation)")]
+    [SerializeField] private int baseRedFine = 3;
+
+    [Tooltip("Multiplier applied per additional violation: 1st=base, 2nd=base*mult, 3rd=base*mult^2, ...")]
+    [SerializeField] private float fineMultiplierPerViolation = 1.5f;
+
+    [Tooltip("Optional cap to prevent insane values. Set to 0 to disable cap.")]
+    [SerializeField] private int maxFineCap = 0;
 
     [Header("Crossing detection")]
     [SerializeField] private float minSpeedToCount = 0.2f;
@@ -79,14 +84,11 @@ public class TrafficLightController : MonoBehaviour
 
         // Must have a Rigidbody2D to read velocity
         Rigidbody2D rb = other.attachedRigidbody;
+        if (rb == null) rb = other.GetComponent<Rigidbody2D>();
         if (rb == null)
         {
-            rb = other.GetComponent<Rigidbody2D>();
-            if (rb == null)
-            {
-                Debug.LogWarning("TrafficLight: Player entered but has no Rigidbody2D.");
-                return;
-            }
+            Debug.LogWarning("TrafficLight: Player entered but has no Rigidbody2D.");
+            return;
         }
 
         // Must be moving enough
@@ -94,16 +96,25 @@ public class TrafficLightController : MonoBehaviour
         if (speed < minSpeedToCount)
             return;
 
-        // Must have PenaltyManager in this scene
+        // Must have PenaltyManager
         if (PenaltyManager.Instance == null)
         {
             Debug.LogError("TrafficLight: PenaltyManager.Instance is NULL in this scene. Add PenaltyManager to the scene.");
             return;
         }
 
-        // Escalation per-light: 1st fine, 2nd fine, then keep second fine
+        // Increase local violation count (per traffic light)
         redViolationsLocal++;
-        int fine = (redViolationsLocal == 1) ? firstRedFine : secondRedFine;
+
+        // Compute fine: base * mult^(n-1)
+        float fineFloat = baseRedFine * Mathf.Pow(fineMultiplierPerViolation, redViolationsLocal - 1);
+
+        // Round to int (you can change to FloorToInt if you prefer)
+        int fine = Mathf.RoundToInt(fineFloat);
+
+        // Optional cap
+        if (maxFineCap > 0)
+            fine = Mathf.Min(fine, maxFineCap);
 
         PenaltyManager.Instance.IssueTicket(
             PenaltyManager.ViolationType.RedLight,

@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 3772170974967049871}
   - component: {fileID: 2611048018041087861}
   - component: {fileID: 6447245340066577804}
-  - component: {fileID: 1476414774239470239}
   m_Layer: 0
   m_Name: TrafficLight
   m_TagString: Untagged
@@ -138,22 +137,3 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 10, y: 10}
   m_EdgeRadius: 0
---- !u!114 &1476414774239470239
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1848159870736969908}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01297def058fa004dbe83093d29946e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TrafficLightController
-  greenDuration: 3
-  redDuration: 3
-  firstRedFine: 3
-  secondRedFine: 6
-  stopDuration: 5
-  greenSprite: {fileID: 7661236339456847922, guid: 6323f72d22a735441a72bf16bbe8d7aa, type: 3}
-  redSprite: {fileID: 2558310412468410847, guid: 1c5d1c1c5bc5a4246aa92e8f19174c55, type: 3}

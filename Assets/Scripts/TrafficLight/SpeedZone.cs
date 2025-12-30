@@ -1,182 +1,119 @@
-using System.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(BoxCollider2D))]
 public class SpeedZone : MonoBehaviour
 {
     [Header("Speed limit")]
-    public float zoneMaxSpeed = 3.5f;
+    [SerializeField] private float zoneMaxSpeed = 3.5f;
 
-    [Header("Penalty Settings")]
-    public int firstFine = 5;
-    public int secondFine = 10;
-    public float stopDuration = 2f;
+    [Header("Crossing detection")]
+    [SerializeField] private float minSpeedToCount = 0.2f;
 
-    [Header("Enforcement Settings")]
-    public float graceAfterStop = 0.3f; // small grace time after stop ends, to avoid instant re-trigger
+    [Header("Anti-spam")]
+    [Tooltip("If true, a new ticket is issued only after the player slows down to legal speed.")]
+    [SerializeField] private bool requireSlowdownBeforeNextTicket = true;
+
+    [Header("Fine escalation (local)")]
+    [SerializeField] private int baseSpeedFine = 5;
+
+    [Tooltip("Multiplier applied per additional violation: 1st=base, 2nd=base*mult, 3rd=base*mult^2, ...")]
+    [SerializeField] private float fineMultiplierPerViolation = 1.5f;
+
+    [Tooltip("Optional cap to prevent insane values. Set to 0 to disable cap.")]
+    [SerializeField] private int maxFineCap = 0;
 
     private BoxCollider2D box;
     private Transform player;
     private Rigidbody2D playerRb;
 
-    private bool handledThisOverspeed = false; // like handledThisRed in traffic light
-    private bool isStopping = false;           // prevents stop loops
+    private bool armed = true;
+    private int localSpeedViolations = 0;
 
-    private static int speedViolations = 0;    // global violations (same style as traffic lights)
+    private void Awake()
+    {
+        box = GetComponent<BoxCollider2D>();
+        box.isTrigger = true;
+    }
 
     private void Start()
     {
-        box = GetComponent<BoxCollider2D>();
-        if (box == null)
-        {
-            Debug.LogWarning("SpeedZone: BoxCollider2D not found!");
-        }
+        TryAssignPlayer();
+    }
+
+    private void TryAssignPlayer()
+    {
+        if (player != null && playerRb != null) return;
 
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-        {
-            player = playerObj.transform;
-            playerRb = playerObj.GetComponent<Rigidbody2D>();
+        if (playerObj == null) return;
 
-            if (playerRb == null)
-            {
-                Debug.LogWarning("SpeedZone: Rigidbody2D not found on Player!");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("SpeedZone: Player with tag 'Player' not found!");
-        }
+        player = playerObj.transform;
+        playerRb = playerObj.GetComponent<Rigidbody2D>();
     }
 
     private void Update()
     {
-        if (player == null || box == null || playerRb == null)
-        {
-            return;
-        }
+        if (box == null) return;
 
-        // If currently stopping the player, do not enforce new violations
-        if (isStopping)
-        {
-            return;
-        }
+        if (player == null || playerRb == null)
+            TryAssignPlayer();
 
-        // Check if player is inside this speed zone area
+        if (player == null || playerRb == null)
+            return;
+
         bool isInside = box.bounds.Contains(player.position);
         if (!isInside)
         {
-            // If not inside, rearm for next entry
-            handledThisOverspeed = false;
+            armed = true;
             return;
         }
 
         float speed = playerRb.linearVelocity.magnitude;
 
-        // If speeding, handle once until player becomes legal again
+        // If we want one ticket per overspeed event, re-arm only after slowing down
+        if (requireSlowdownBeforeNextTicket && !armed)
+        {
+            if (speed <= zoneMaxSpeed)
+                armed = true;
+
+            return;
+        }
+
+        if (speed < minSpeedToCount)
+            return;
+
         if (speed > zoneMaxSpeed)
         {
-            if (!handledThisOverspeed)
+            if (PenaltyManager.Instance == null)
             {
-                HandleSpeedViolation();
-                handledThisOverspeed = true;
+                Debug.LogWarning("SpeedZone: PenaltyManager.Instance is NULL in this scene.");
+                return;
             }
+
+            // Local escalation counter (per speed zone)
+            localSpeedViolations++;
+
+            float fineFloat = baseSpeedFine * Mathf.Pow(fineMultiplierPerViolation, localSpeedViolations - 1);
+            int fine = Mathf.RoundToInt(fineFloat);
+
+            if (maxFineCap > 0)
+                fine = Mathf.Min(fine, maxFineCap);
+
+            // Report to PenaltyManager (PenaltyManager handles money/unpaid/timeouts/game over)
+            PenaltyManager.Instance.IssueTicket(
+                PenaltyManager.ViolationType.Speed,
+                fine,
+                "SPEEDING"
+            );
+
+            armed = false;
         }
-        else
-        {
-            // Player is legal again -> allow a new violation next time they speed
-            handledThisOverspeed = false;
-        }
-    }
-
-    private void HandleSpeedViolation()
-    {
-        speedViolations++;
-
-        if (speedViolations == 1)
-        {
-            ApplyFine(firstFine);
-        }
-        else if (speedViolations == 2)
-        {
-            ApplyFine(secondFine);
-        }
-        else
-        {
-            StopPlayerForSeconds(stopDuration);
-        }
-    }
-
-    private void ApplyFine(int amount)
-    {
-        if (MoneyManager.Instance == null)
-        {
-            Debug.LogWarning("SpeedZone: MoneyManager.Instance is NULL!");
-            return;
-        }
-
-        bool success = MoneyManager.Instance.TrySpend(amount);
-
-        if (success)
-        {
-            Debug.Log($"Speed fine applied! -{amount}₪ | Current money: {MoneyManager.Instance.CurrentMoney}");
-        }
-        else
-        {
-            Debug.Log("Speed fine not applied – not enough money (already 0).");
-        }
-    }
-
-    private void StopPlayerForSeconds(float seconds)
-    {
-        if (player == null)
-        {
-            return;
-        }
-
-        PlayerController pc = player.GetComponent<PlayerController>();
-        if (pc == null)
-        {
-            Debug.LogWarning("SpeedZone: PlayerController not found on Player. Can't stop movement.");
-            return;
-        }
-
-        StartCoroutine(StopRoutine(pc, seconds));
-    }
-
-    private IEnumerator StopRoutine(PlayerController pc, float seconds)
-    {
-        isStopping = true;
-
-        // Stop movement via the same pattern you used in TrafficLightController
-        pc.canMove = false;
-
-        yield return new WaitForSeconds(seconds);
-
-        // IMPORTANT: Always release movement (prevents "stuck forever")
-        pc.canMove = true;
-
-        // Reset counters after stop (same idea as your traffic light behavior)
-        speedViolations = 0;
-
-        // Rearm enforcement so it doesn't instantly punish again
-        handledThisOverspeed = false;
-
-        // Small grace period (optional but makes it feel fair)
-        if (graceAfterStop > 0f)
-        {
-            yield return new WaitForSeconds(graceAfterStop);
-        }
-
-        isStopping = false;
     }
 
     private void OnDrawGizmosSelected()
     {
         BoxCollider2D b = GetComponent<BoxCollider2D>();
-        if (b == null)
-        {
-            return;
-        }
+        if (b == null) return;
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(b.bounds.center, b.bounds.size);

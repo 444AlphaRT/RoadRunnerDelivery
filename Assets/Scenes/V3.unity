@@ -1017,8 +1017,36 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 149237641}
   m_SourcePrefab: {fileID: 100100000, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+--- !u!1 &149237640 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+  m_PrefabInstance: {fileID: 149237639}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &149237641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 149237640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01297def058fa004dbe83093d29946e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficLightController
+  greenDuration: 3
+  redDuration: 3
+  baseRedFine: 3
+  fineMultiplierPerViolation: 1.7
+  maxFineCap: 30
+  minSpeedToCount: 0.2
+  greenSprite: {fileID: 7661236339456847922, guid: 6323f72d22a735441a72bf16bbe8d7aa, type: 3}
+  redSprite: {fileID: 2558310412468410847, guid: 1c5d1c1c5bc5a4246aa92e8f19174c55, type: 3}
 --- !u!1001 &170335202
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2454,7 +2482,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 740, y: 60}
+  m_AnchoredPosition: {x: 860, y: 60}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &420709947
@@ -2848,12 +2876,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PenaltyManager
   player: {fileID: 666474422}
-  penaltyUI: {fileID: 1196690534}
-  gameOverUI: {fileID: 1378243677}
+  penaltyUI: {fileID: 983676303}
+  gameOverUI: {fileID: 601494746}
   maxViolationsBeforeGameOver: 5
   firstTimeoutSeconds: 15
-  secondTimeoutSeconds: 30
+  secondTimeoutSeconds: 20
   maxUnpaidStrikes: 3
+  uiTickSeconds: 1
 --- !u!4 &522719508
 Transform:
   m_ObjectHideFlags: 0
@@ -2963,6 +2992,57 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!1 &601494744
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 601494745}
+  - component: {fileID: 601494746}
+  m_Layer: 5
+  m_Name: GameOverUIController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &601494745
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 601494744}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1378243676}
+  m_Father: {fileID: 1346841602}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &601494746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 601494744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83bac79487ffd4460b9c691c1cef2efa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameOverUI
+  root: {fileID: 1378243675}
+  stageSelectSceneName: MainManu
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -3459,7 +3539,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 740, y: 16}
+  m_AnchoredPosition: {x: 860, y: 16}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &670096333
@@ -3674,7 +3754,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1378243677}
+      - m_Target: {fileID: 601494746}
         m_TargetAssemblyTypeName: GameOverUI, Assembly-CSharp
         m_MethodName: TryAgain
         m_Mode: 1
@@ -5093,6 +5173,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f2fed5ee0cc1435186f9e8bd0e3269c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Waypoint
+--- !u!1 &983676301
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 983676302}
+  - component: {fileID: 983676303}
+  m_Layer: 5
+  m_Name: PenaltyUIController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &983676302
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 983676301}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1196690535}
+  m_Father: {fileID: 1346841602}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &983676303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 983676301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0364051814454452cbb1c8346d636a67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PenaltyOverlayUI
+  rootPanel: {fileID: 1196690533}
+  titleText: {fileID: 1880698369}
+  bodyText: {fileID: 1543874147}
 --- !u!1 &984724635
 GameObject:
   m_ObjectHideFlags: 0
@@ -5130,7 +5262,7 @@ MonoBehaviour:
   refuelUnitsAmount: 5
   refuelCostCoins: 5
   noMoneyFreezeSeconds: 5
-  player: {fileID: 0}
+  player: {fileID: 666474422}
 --- !u!4 &984724637
 Transform:
   m_ObjectHideFlags: 0
@@ -5607,10 +5739,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpeedZone
   zoneMaxSpeed: 2
-  firstFine: 5
-  secondFine: 10
-  stopDuration: 2
-  graceAfterStop: 0.3
+  minSpeedToCount: 0.2
+  requireSlowdownBeforeNextTicket: 1
+  baseSpeedFine: 3
+  fineMultiplierPerViolation: 1.2
+  maxFineCap: 0
 --- !u!61 &1085847306
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -6276,7 +6409,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1196690535}
-  - component: {fileID: 1196690534}
   m_Layer: 5
   m_Name: PenaltyRoot
   m_TagString: Untagged
@@ -6284,21 +6416,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!114 &1196690534
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1196690533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0364051814454452cbb1c8346d636a67, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PenaltyOverlayUI
-  rootPanel: {fileID: 1196690533}
-  titleText: {fileID: 1880698369}
-  bodyText: {fileID: 1543874147}
 --- !u!224 &1196690535
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6306,14 +6423,14 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1196690533}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1880698367}
   - {fileID: 1543874149}
-  m_Father: {fileID: 1346841602}
+  m_Father: {fileID: 983676302}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -6469,7 +6586,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 860, y: 0}
+  m_AnchoredPosition: {x: 980, y: 0}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1211779962
@@ -6518,10 +6635,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpeedZone
   zoneMaxSpeed: 5
-  firstFine: 5
-  secondFine: 10
-  stopDuration: 2
-  graceAfterStop: 0.3
+  minSpeedToCount: 0.2
+  requireSlowdownBeforeNextTicket: 1
+  baseSpeedFine: 3
+  fineMultiplierPerViolation: 1.2
+  maxFineCap: 0
 --- !u!61 &1211779965
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -6842,8 +6960,36 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1297920095}
   m_SourcePrefab: {fileID: 100100000, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+--- !u!1 &1297920094 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+  m_PrefabInstance: {fileID: 1297920093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1297920095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1297920094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01297def058fa004dbe83093d29946e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficLightController
+  greenDuration: 3
+  redDuration: 3
+  baseRedFine: 3
+  fineMultiplierPerViolation: 1.7
+  maxFineCap: 30
+  minSpeedToCount: 0.2
+  greenSprite: {fileID: 7661236339456847922, guid: 6323f72d22a735441a72bf16bbe8d7aa, type: 3}
+  redSprite: {fileID: 2558310412468410847, guid: 1c5d1c1c5bc5a4246aa92e8f19174c55, type: 3}
 --- !u!1 &1314386740
 GameObject:
   m_ObjectHideFlags: 0
@@ -7349,8 +7495,8 @@ RectTransform:
   - {fileID: 1504117711}
   - {fileID: 1772922529}
   - {fileID: 1876552568}
-  - {fileID: 1196690535}
-  - {fileID: 1378243676}
+  - {fileID: 601494745}
+  - {fileID: 983676302}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -7705,7 +7851,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1378243676}
-  - component: {fileID: 1378243677}
   m_Layer: 5
   m_Name: GameOverRoot
   m_TagString: Untagged
@@ -7727,27 +7872,13 @@ RectTransform:
   m_Children:
   - {fileID: 791416241}
   - {fileID: 735130158}
-  m_Father: {fileID: 1346841602}
+  m_Father: {fileID: 601494745}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0.00012207031, y: -0.000030517578}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1378243677
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378243675}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83bac79487ffd4460b9c691c1cef2efa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameOverUI
-  root: {fileID: 1378243675}
-  stageSelectSceneName: StageSelect
 --- !u!1 &1379050472
 GameObject:
   m_ObjectHideFlags: 0
@@ -8604,8 +8735,36 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1525208830}
   m_SourcePrefab: {fileID: 100100000, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+--- !u!1 &1525208829 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+  m_PrefabInstance: {fileID: 1525208828}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1525208830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525208829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01297def058fa004dbe83093d29946e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficLightController
+  greenDuration: 3
+  redDuration: 3
+  baseRedFine: 3
+  fineMultiplierPerViolation: 1.7
+  maxFineCap: 30
+  minSpeedToCount: 0.2
+  greenSprite: {fileID: 7661236339456847922, guid: 6323f72d22a735441a72bf16bbe8d7aa, type: 3}
+  redSprite: {fileID: 2558310412468410847, guid: 1c5d1c1c5bc5a4246aa92e8f19174c55, type: 3}
 --- !u!1 &1543778742
 GameObject:
   m_ObjectHideFlags: 0
@@ -9695,7 +9854,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 870, y: 48}
+  m_AnchoredPosition: {x: 980, y: 48}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1819387519
@@ -10103,7 +10262,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 324.5, y: -148}
+  m_AnchoredPosition: {x: 441, y: -148}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1876552569
@@ -11624,10 +11783,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpeedZone
   zoneMaxSpeed: 3.5
-  firstFine: 5
-  secondFine: 10
-  stopDuration: 2
-  graceAfterStop: 0.3
+  minSpeedToCount: 0.2
+  requireSlowdownBeforeNextTicket: 1
+  baseSpeedFine: 3
+  fineMultiplierPerViolation: 1.2
+  maxFineCap: 0
 --- !u!61 &2135080295
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -11757,8 +11917,36 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1593354899022835143}
   m_SourcePrefab: {fileID: 100100000, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+--- !u!1 &1593354899022835142 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1848159870736969908, guid: 026c4a129f4abeb4695c2e1cdb5a798f, type: 3}
+  m_PrefabInstance: {fileID: 1593354899022835141}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1593354899022835143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1593354899022835142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01297def058fa004dbe83093d29946e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficLightController
+  greenDuration: 3
+  redDuration: 3
+  baseRedFine: 3
+  fineMultiplierPerViolation: 1.7
+  maxFineCap: 30
+  minSpeedToCount: 0.2
+  greenSprite: {fileID: 7661236339456847922, guid: 6323f72d22a735441a72bf16bbe8d7aa, type: 3}
+  redSprite: {fileID: 2558310412468410847, guid: 1c5d1c1c5bc5a4246aa92e8f19174c55, type: 3}
 --- !u!1001 &5287684096335880563
 PrefabInstance:
   m_ObjectHideFlags: 0

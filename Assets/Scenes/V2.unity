@@ -2567,7 +2567,7 @@ GameObject:
   - component: {fileID: 420709947}
   m_Layer: 5
   m_Name: FuelIcon
-  m_TagString: Untagged
+  m_TagString: FuelText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2588,7 +2588,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 913.9, y: 67.5}
+  m_AnchoredPosition: {x: 808, y: 65}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &420709947
@@ -3760,7 +3760,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 913.9, y: 27.6}
+  m_AnchoredPosition: {x: 811, y: 24}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &670096333
@@ -5063,7 +5063,7 @@ GameObject:
   - component: {fileID: 984724636}
   m_Layer: 0
   m_Name: FuelManager
-  m_TagString: FuelText
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5087,8 +5087,8 @@ MonoBehaviour:
   deliveriesPerFuelUnit: 3
   refuelUnitsAmount: 5
   refuelCostCoins: 5
-  noMoneyFreezeSeconds: 5
-  player: {fileID: 666474422}
+  resetOnSceneEnter: 1
+  rebindRetryFrames: 10
 --- !u!4 &984724637
 Transform:
   m_ObjectHideFlags: 0
@@ -6278,7 +6278,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 1035.6, y: 16.6}
+  m_AnchoredPosition: {x: 937, y: 12}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1221445268
@@ -9425,7 +9425,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 1036.4, y: 52.2}
+  m_AnchoredPosition: {x: 933, y: 53}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1819387519

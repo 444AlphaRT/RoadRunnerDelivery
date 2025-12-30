@@ -7,41 +7,50 @@ public class FuelManager : MonoBehaviour
 {
     public static FuelManager Instance { get; private set; }
 
-    [Header("UI (auto found by tag each scene)")]
+    [Header("UI")]
     [SerializeField] private TextMeshProUGUI fuelText;
-    [SerializeField] private string fuelTextTag = "FuelText"; // This must be a real Unity Tag on the TMP object
+    [SerializeField] private string fuelTextTag = "FuelText";
 
     [Header("Fuel Settings")]
     [SerializeField] private int startingFuel = 5;
     [SerializeField] private int maxFuel = 10;
 
     [Header("Fuel Consumption")]
-    [Tooltip("How many completed deliveries consume 1 fuel unit.")]
+    [Tooltip("Every N completed deliveries consume 1 fuel unit.")]
     [SerializeField] private int deliveriesPerFuelUnit = 3;
 
     [Header("Refuel Settings")]
     [SerializeField] private int refuelUnitsAmount = 5;
     [SerializeField] private int refuelCostCoins = 5;
 
-    [Header("No Money Penalty")]
-    [SerializeField] private float noMoneyFreezeSeconds = 5f;
+    [Header("Reset Policy")]
+    [Tooltip("If true, entering a scene with a FuelManager will reset fuel to startingFuel.")]
+    [SerializeField] private bool resetOnSceneEnter = true;
 
-    [Header("References")]
-    [SerializeField] private PlayerController player;
+    [Header("WebGL/Build Robustness")]
+    [Tooltip("How many frames to retry finding the FuelText after a scene loads.")]
+    [SerializeField] private int rebindRetryFrames = 10;
 
     public int CurrentFuel { get; private set; }
 
     private int deliveriesSinceLastFuelDrop = 0;
-    private bool initialized = false;
-
-    private Coroutine freezeCoroutine = null;
-    private bool isFrozen = false;
+    private Coroutine rebindCoroutine;
 
     private void Awake()
     {
-        // Singleton + keep between scenes
+        // If a duplicate FuelManager exists (because you placed one in every scene),
+        // use THIS one as a config provider for the persistent instance, then destroy it.
         if (Instance != null && Instance != this)
         {
+            Instance.ApplyInspectorConfigFrom(this);
+
+            // IMPORTANT: reset decision should come from THIS scene's FuelManager
+            if (this.resetOnSceneEnter)
+                Instance.ResetToDefaults();
+
+            // Rebind UI for the new scene (WebGL safe)
+            Instance.StartRebindRetries();
+
             Destroy(gameObject);
             return;
         }
@@ -52,52 +61,127 @@ public class FuelManager : MonoBehaviour
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
+    private void Start()
+    {
+        ResetToDefaults();
+        StartRebindRetries();
+    }
+
     private void OnDestroy()
     {
         if (Instance == this)
             SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    private void Start()
-    {
-        if (initialized) return;
-        initialized = true;
-
-        ResetToDefaults();        // start fuel for this run
-        TryAutoAssignPlayer();
-        RebindFuelUI();
-        UpdateFuelText();
-    }
-
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        TryAutoAssignPlayer();
-        RebindFuelUI();
+        StartRebindRetries();
 
-        // If we started a NEW run from stage select -> reset fuel ONCE
         if (RunContext.Instance != null && RunContext.Instance.ConsumeFuelResetFlag())
         {
             ResetToDefaults();
         }
-
-        UpdateFuelText();
+        else if (resetOnSceneEnter)
+        {
+            ResetToDefaults();
+        }
+        else
+        {
+            UpdateFuelText();
+        }
     }
 
-    private void TryAutoAssignPlayer()
+    private void ApplyInspectorConfigFrom(FuelManager src)
     {
-        if (player == null)
-            player = FindFirstObjectByType<PlayerController>();
+        fuelTextTag = src.fuelTextTag;
+
+        startingFuel = src.startingFuel;
+        maxFuel = src.maxFuel;
+
+        deliveriesPerFuelUnit = src.deliveriesPerFuelUnit;
+
+        refuelUnitsAmount = src.refuelUnitsAmount;
+        refuelCostCoins = src.refuelCostCoins;
+
+        resetOnSceneEnter = src.resetOnSceneEnter;
+        rebindRetryFrames = src.rebindRetryFrames;
+    }
+
+    private void StartRebindRetries()
+    {
+        if (rebindCoroutine != null)
+        {
+            StopCoroutine(rebindCoroutine);
+            rebindCoroutine = null;
+        }
+
+        rebindCoroutine = StartCoroutine(RebindWithRetries());
+    }
+
+    private IEnumerator RebindWithRetries()
+    {
+        for (int i = 0; i < Mathf.Max(1, rebindRetryFrames); i++)
+        {
+            RebindFuelUI();
+
+            if (fuelText != null)
+            {
+                UpdateFuelText();
+                rebindCoroutine = null;
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        UpdateFuelText();
+        Debug.LogWarning("FuelManager: FuelText not found after retries. Check FuelText tag and that the TMP object exists in the scene.");
+        rebindCoroutine = null;
     }
 
     private void RebindFuelUI()
     {
-        // Find the scene's UI text by tag
-        GameObject go = GameObject.FindGameObjectWithTag(fuelTextTag);
+        // 1) Try tag (active only)
+        GameObject go = null;
+
+        try
+        {
+            go = GameObject.FindGameObjectWithTag(fuelTextTag);
+        }
+        catch
+        {
+            Debug.LogWarning($"FuelManager: Tag '{fuelTextTag}' does not exist. Add it in Tags & Layers.");
+        }
+
         if (go != null)
-            fuelText = go.GetComponent<TextMeshProUGUI>();
+        {
+            // IMPORTANT FIX: only accept it if it actually has a TMP component
+            var tmp = go.GetComponent<TextMeshProUGUI>();
+            if (tmp != null)
+            {
+                fuelText = tmp;
+                return;
+            }
+            // If the tagged object is NOT a TMP text (e.g. someone tagged FuelManager by mistake),
+            // continue to fallback instead of returning with fuelText = null.
+        }
+
+        // 2) Fallback: find TMP texts including inactive, prefer matching tag
+        var allTmp = FindObjectsOfType<TextMeshProUGUI>(true);
+        foreach (var t in allTmp)
+        {
+            if (t != null && t.gameObject.CompareTag(fuelTextTag))
+            {
+                fuelText = t;
+                return;
+            }
+        }
+
+        // 3) If still not found, keep previous reference if it exists
+        // (do not force null unless you really want that behavior)
+        // fuelText = null;
     }
 
-    // Call this once when a delivery is completed
     public void RegisterDeliveryCompleted()
     {
         deliveriesSinceLastFuelDrop++;
@@ -109,6 +193,10 @@ public class FuelManager : MonoBehaviour
         {
             deliveriesSinceLastFuelDrop = 0;
             UseFuel(1);
+        }
+        else
+        {
+            UpdateFuelText();
         }
     }
 
@@ -129,14 +217,12 @@ public class FuelManager : MonoBehaviour
     public void SetFuel(int amount)
     {
         CurrentFuel = Mathf.Clamp(amount, 0, maxFuel);
+        deliveriesSinceLastFuelDrop = 0;
         UpdateFuelText();
     }
 
-    // Called by button OR by Player pressing E (your choice)
     public void TryRefuel()
     {
-        if (isFrozen) return; // prevent spam while already frozen
-
         if (MoneyManager.Instance == null)
         {
             Debug.LogWarning("FuelManager: MoneyManager.Instance is NULL!");
@@ -147,37 +233,15 @@ public class FuelManager : MonoBehaviour
             return;
 
         bool paid = MoneyManager.Instance.TrySpend(refuelCostCoins);
-        if (paid)
+        if (!paid)
         {
-            AddFuel(refuelUnitsAmount);
+            Debug.Log("FuelManager: Not enough money to refuel.");
             return;
         }
 
-        // No money -> freeze player for a few seconds
-        if (player != null)
-        {
-            if (freezeCoroutine != null) StopCoroutine(freezeCoroutine);
-            freezeCoroutine = StartCoroutine(FreezePlayer(noMoneyFreezeSeconds));
-        }
+        AddFuel(refuelUnitsAmount);
     }
 
-    private IEnumerator FreezePlayer(float seconds)
-    {
-        isFrozen = true;
-
-        bool prevCanMove = player.canMove;
-        player.canMove = false;
-
-        // Use realtime so it works even if Time.timeScale changes somewhere
-        yield return new WaitForSecondsRealtime(seconds);
-
-        player.canMove = prevCanMove;
-
-        isFrozen = false;
-        freezeCoroutine = null;
-    }
-
-    // Called when starting a NEW run (stage select / try again)
     public void ResetToDefaults()
     {
         CurrentFuel = Mathf.Clamp(startingFuel, 0, maxFuel);

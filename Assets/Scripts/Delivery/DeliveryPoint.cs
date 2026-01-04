@@ -13,79 +13,74 @@ public class DeliveryPoint : MonoBehaviour
     [SerializeField] private PointType pointType;
 
     [Header("Visual Markers")]
-    [SerializeField] private GameObject marker;           // Icon for THIS point (pickup icon or dropoff icon)
-    [SerializeField] private GameObject dropoffMarker;    // Only used on the pickup point to show where to deliver
+    [SerializeField] private GameObject marker;
+    [SerializeField] private GameObject dropoffMarker;
 
     [Header("Hint UI (optional)")]
     [SerializeField] private TextMeshProUGUI hintText;
 
     [Header("References (Dropoff only)")]
-    [SerializeField] private Transform pickupPointForThisRoute; // Assign the PickupPoint here in the Dropoff inspector
+    [SerializeField] private Transform pickupPointForThisRoute;
 
     [Header("Reward Configuration - Base Pay")]
-    [SerializeField] private float minDistanceForPay = 1f;            // Minimum distance considered for pay
-    [SerializeField] private float basePayPerUnit = 1.5f;             // Coins per distance unit
-    [SerializeField] private float farDistanceThreshold = 12f;        // Distance at which a delivery is considered "long"
-    [SerializeField] private float farDistanceMultiplier = 1.3f;      // Multiplier for long deliveries
+    [SerializeField] private float minDistanceForPay = 1f;
+    [SerializeField] private float basePayPerUnit = 1.5f;
+    [SerializeField] private float farDistanceThreshold = 12f;
+    [SerializeField] private float farDistanceMultiplier = 1.3f;
 
     [Header("Reward Configuration - Time & Speed")]
-    [SerializeField] private float minTimeSafe = 0.1f;                // To avoid division by zero
-    [SerializeField] private float expectedSpeedUnitsPerSecond = 4f;  // "Normal" driving speed for expected time
+    [SerializeField] private float minTimeSafe = 0.1f;
+    [SerializeField] private float expectedSpeedUnitsPerSecond = 4f;
 
-    [Header("Reward Configuration - Tip Thresholds (ratio = actualTime / expectedTime)")]
-    [SerializeField] private float tipFastThresholdRatio = 0.8f;      // ratio <= this → top tip
-    [SerializeField] private float tipNormalThresholdRatio = 1.1f;    // ratio <= this → normal tip
-    [SerializeField] private float tipSlowThresholdRatio = 1.5f;      // ratio <= this → sometimes small tip
+    [Header("Reward Configuration - Tip Thresholds")]
+    [SerializeField] private float tipFastThresholdRatio = 0.8f;
+    [SerializeField] private float tipNormalThresholdRatio = 1.1f;
+    [SerializeField] private float tipSlowThresholdRatio = 1.5f;
 
     [Header("Reward Configuration - Tip Rates")]
-    [SerializeField] private float tipRateFast = 0.12f;               // 12% tip when very fast
-    [SerializeField] private float tipRateNormal = 0.10f;             // 10% tip when normal speed
-    [SerializeField] private float tipRateSlow = 0.05f;               // 5% tip when a bit slow (if customer is nice)
+    [SerializeField] private float tipRateFast = 0.12f;
+    [SerializeField] private float tipRateNormal = 0.10f;
+    [SerializeField] private float tipRateSlow = 0.05f;
 
     [Header("Reward Configuration - Customer Mood")]
-    [SerializeField] private float niceCustomerProbability = 0.5f;    // Chance for a slow delivery to still get a small tip
+    [SerializeField] private float niceCustomerProbability = 0.5f;
 
     [Header("Reward Configuration - Clamp Coins")]
-    [SerializeField] private int minCoinsPerDelivery = 2;             // Never give less than this
-    [SerializeField] private int maxCoinsPerDelivery = 15;            // Never give more than this
+    [SerializeField] private int minCoinsPerDelivery = 2;
+    [SerializeField] private int maxCoinsPerDelivery = 15;
 
-    private DeliveryTimer timer;
-    private UpgradeUIController upgradeUI; // Reference to UI controller that manages the upgrade button
+    // --- שינוי: שומרים מקום לשני סוגי הטיימרים ---
+    private DeliveryTimer oldTimer;           // לשימוש ב-V2
+    private DeliveryTimersLevel3 v3Timer;     // לשימוש ב-V3
+    // ----------------------------------------------
+
+    private UpgradeUIController upgradeUI;
 
     private void Start()
     {
-        // Find the global timer once in the scene
-        timer = FindAnyObjectByType<DeliveryTimer>();
+        // מנסים למצוא את שני הטיימרים. 
+        // ב-V2 הוא ימצא רק את oldTimer. ב-V3 ימצא רק את v3Timer.
+        oldTimer = FindAnyObjectByType<DeliveryTimer>();
+        v3Timer = FindAnyObjectByType<DeliveryTimersLevel3>();
 
-        // Find the upgrade UI controller once in the scene
         upgradeUI = FindAnyObjectByType<UpgradeUIController>();
 
         if (pointType == PointType.Pickup)
         {
-            // Player has no package yet → show pickup icon
-            if (marker != null)
-                marker.SetActive(true);
-
-            // Dropoff icon will be shown only after pickup
-            if (dropoffMarker != null)
-                dropoffMarker.SetActive(false);
-
-            if (hintText != null)
-                hintText.text = "Drive to the pickup icon to collect an order.";
+            if (marker != null) marker.SetActive(true);
+            if (dropoffMarker != null) dropoffMarker.SetActive(false);
+            if (hintText != null) hintText.text = "Drive to the pickup icon to collect an order.";
         }
-        else // Dropoff
+        else
         {
-            // We always want the dropoff icon visible so the player knows where to deliver
-            if (marker != null)
-                marker.SetActive(true);
+            if (marker != null) marker.SetActive(true);
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         PlayerController player = other.GetComponent<PlayerController>();
-        if (player == null)
-            return;
+        if (player == null) return;
 
         if (pointType == PointType.Pickup)
         {
@@ -99,45 +94,31 @@ public class DeliveryPoint : MonoBehaviour
 
     private void HandlePickup(PlayerController player)
     {
-        // Already carrying a package → ignore
-        if (player.HasPackage)
-            return;
+        if (player.HasPackage) return;
 
-        // Player picks up the package
         player.PickUpPackage();
 
-        // While an active delivery is running, hide the upgrade button (if unlocked)
         if (upgradeUI != null)
         {
             upgradeUI.OnPickupStarted(player.deliveriesCompleted);
         }
 
-        // Start the delivery timer
-        if (timer != null)
-            timer.StartTimer();
+        // אם אנחנו ב-V2, מפעילים את הטיימר הישן ידנית.
+        // ב-V3 הטיימר מזהה לבד שיש חבילה ולכן לא חייבים לקרוא לו, אבל זה לא מזיק.
+        if (oldTimer != null) oldTimer.StartTimer();
 
-        // Hide pickup marker
-        if (marker != null)
-            marker.SetActive(false);
+        if (marker != null) marker.SetActive(false);
+        if (dropoffMarker != null) dropoffMarker.SetActive(true);
 
-        // Show dropoff icon (assigned from DropoffPoint)
-        if (dropoffMarker != null)
-            dropoffMarker.SetActive(true);
-
-        if (hintText != null)
-            hintText.text = "Follow the purple path and deliver the package.";
+        if (hintText != null) hintText.text = "Follow the purple path and deliver the package.";
     }
 
     private void HandleDropoff(PlayerController player)
     {
-        // Must have a package to deliver
-        if (!player.HasPackage)
-            return;
+        if (!player.HasPackage) return;
 
-        // Deliver the package (updates player's delivery stats)
         player.DeliverPackage();
 
-        // Notify the upgrade UI that a delivery was completed (button can appear between deliveries)
         if (upgradeUI != null)
         {
             upgradeUI.OnDeliveryCompleted(player.deliveriesCompleted);
@@ -145,62 +126,66 @@ public class DeliveryPoint : MonoBehaviour
 
         float time = 0f;
         float distance = 0f;
+        bool isLate = false; // ברירת מחדל: לא מאחרים
 
-        // Stop timer and read time
-        if (timer != null)
+        // --- בדיקה איזה טיימר פעיל ---
+        if (v3Timer != null)
         {
-            timer.StopTimer();
-            time = timer.LastDeliveryTime;
+            // אנחנו ב-V3: לוקחים נתונים מהטיימר החדש
+            time = v3Timer.LastDeliveryTime;
+            isLate = v3Timer.IsLate; // האם הגיע ל-0?
         }
+        else if (oldTimer != null)
+        {
+            // אנחנו ב-V2: עובדים רגיל עם הטיימר הישן
+            oldTimer.StopTimer();
+            time = oldTimer.LastDeliveryTime;
+            isLate = false; // ב-V2 אין מושג של "איחור" בקוד הזה
+        }
+        // -----------------------------
 
-        // Compute distance from pickup point to this dropoff
         if (pickupPointForThisRoute != null)
         {
             distance = Vector2.Distance(pickupPointForThisRoute.position, transform.position);
         }
 
-        int coins = CalculateReward(distance, time);
+        // שולחים את נתון האיחור לחישוב
+        int coins = CalculateReward(distance, time, isLate);
 
-        // Add money if MoneyManager exists
         if (MoneyManager.Instance != null)
         {
             MoneyManager.Instance.AddMoney(coins);
         }
 
-        // Save stats (run + total) if PlayerStatsManager exists
         if (PlayerStatsManager.Instance != null)
         {
             PlayerStatsManager.Instance.RegisterDelivery(coins);
         }
 
-        Debug.Log($"Delivery complete → distance={distance:F1}, time={time:F1}s, coins={coins}");
+        Debug.Log($"Delivery complete -> distance={distance:F1}, time={time:F1}s, coins={coins}, Late={isLate}");
 
-        // Move this DropoffPoint to a new random building
         RandomDropoffLocation randomDropoff = GetComponent<RandomDropoffLocation>();
         if (randomDropoff != null)
         {
             randomDropoff.MoveToRandomSpot();
         }
 
-        if (hintText != null)
-            hintText.text = "Great! Drive to the pickup icon for your next order.";
+        if (hintText != null) hintText.text = "Great! Drive to the pickup icon for your next order.";
     }
 
-    /// <summary>
-    /// Calculates coin reward based on delivery distance and time.
-    /// - Base pay scales with distance (with a bonus for long deliveries).
-    /// - Tip depends on how fast the delivery was compared to an expected time.
-    /// </summary>
-    private int CalculateReward(float distance, float time)
+    // הוספתי פרמטר שלישי: isLate
+    private int CalculateReward(float distance, float time, bool isLate)
     {
-        // Sanity clamps
-        if (distance < minDistanceForPay)
-            distance = minDistanceForPay;
+        // --- אם איחרנו, מחזירים מייד 1 ויוצאים ---
+        if (isLate)
+        {
+            return 1;
+        }
+        // ----------------------------------------
 
-        if (time < minTimeSafe)
-            time = minTimeSafe;
+        if (distance < minDistanceForPay) distance = minDistanceForPay;
+        if (time < minTimeSafe) time = minTimeSafe;
 
-        // 1) Base pay from distance
         float basePay = distance * basePayPerUnit;
 
         bool isFarDelivery = distance >= farDistanceThreshold;
@@ -209,9 +194,8 @@ public class DeliveryPoint : MonoBehaviour
             basePay *= farDistanceMultiplier;
         }
 
-        // 2) Tip based on speed
         float expectedTime = distance / expectedSpeedUnitsPerSecond;
-        float ratio = time / expectedTime; // < 1 = faster, > 1 = slower
+        float ratio = time / expectedTime;
 
         float tipRate = 0f;
 
@@ -234,8 +218,6 @@ public class DeliveryPoint : MonoBehaviour
         }
 
         float totalPay = basePay * (1f + tipRate);
-
-        // 3) Clamp to a reasonable range
         int coins = Mathf.RoundToInt(totalPay);
         coins = Mathf.Clamp(coins, minCoinsPerDelivery, maxCoinsPerDelivery);
 

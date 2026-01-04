@@ -3,131 +3,96 @@ using TMPro;
 
 public class DeliveryTimersLevel3 : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private PlayerController player;
+    [Header("Settings")]
+    public float timeLimit = 60f;
 
-    [Header("UI References (two separate TMP texts)")]
-    [SerializeField] private TextMeshProUGUI timerText1;
-    [SerializeField] private TextMeshProUGUI timerText2;
+    [Header("UI References")]
+    public TextMeshProUGUI timerText;
+    public GameObject lateMessage;
 
-    [Header("Level 4 - Deadline & Penalty")]
-    [SerializeField] private float deadlineSeconds = 20f;
-    [SerializeField] private int latePenaltyPerSecond = 1;
+    // משתנים לקריאה ע"י DeliveryPoint
+    public bool IsLate { get; private set; }
 
-    private bool timer1Running = false;
-    private bool timer2Running = false;
+    // זה המשתנה החדש שמאפשר ל-DeliveryPoint לקרוא את הזמן לפני האיפוס
+    public float CurrentTime => currentTime;
+    // משתנה לתאימות לאחור אם משהו אחר מחפש את זה
+    public float LastDeliveryTime { get; private set; }
 
-    private float timer1 = 0f;
-    private float timer2 = 0f;
-
-    private float penaltyClock1 = 0f;
-    private float penaltyClock2 = 0f;
-
-    private int lastPackagesHeld = 0;
-    private int lastDeliveriesCompleted = 0;
-
-    private void Awake()
-    {
-        if (player == null)
-            player = FindObjectOfType<PlayerController>();
-    }
+    private PlayerController player;
+    private float currentTime;
+    private bool isTimerRunning = false;
 
     private void Start()
     {
-        if (timerText1 != null) { timerText1.text = ""; timerText1.gameObject.SetActive(false); }
-        if (timerText2 != null) { timerText2.text = ""; timerText2.gameObject.SetActive(false); }
-
-        if (player != null)
-        {
-            lastPackagesHeld = player.packagesHeld;
-            lastDeliveriesCompleted = player.deliveriesCompleted;
-        }
-        else
-        {
-            Debug.LogError("DeliveryTimersLevel3: Player missing");
-            enabled = false;
-        }
+        player = FindFirstObjectByType<PlayerController>();
+        ResetToStart();
     }
 
     private void Update()
     {
-        UpdateTimer(ref timer1, ref penaltyClock1, timer1Running, timerText1, 1);
-        UpdateTimer(ref timer2, ref penaltyClock2, timer2Running, timerText2, 2);
-
         if (player == null) return;
 
-        // Detect PICKUP
-        if (player.packagesHeld > lastPackagesHeld)
-        {
-            int delta = player.packagesHeld - lastPackagesHeld;
-            for (int i = 0; i < delta; i++)
-                StartNextTimer();
+        bool playerHasPackage = player.HasPackage;
 
-            lastPackagesHeld = player.packagesHeld;
+        if (playerHasPackage)
+        {
+            if (!isTimerRunning) StartTimer();
+
+            currentTime -= Time.deltaTime;
+
+            if (currentTime <= 0)
+            {
+                currentTime = 0;
+                IsLate = true;
+
+                if (lateMessage != null && !lateMessage.activeSelf)
+                    lateMessage.SetActive(true);
+            }
+        }
+        else
+        {
+            if (isTimerRunning) StopTimer();
         }
 
-        // Detect DELIVERY
-        if (player.deliveriesCompleted > lastDeliveriesCompleted)
-        {
-            int delta = player.deliveriesCompleted - lastDeliveriesCompleted;
-            for (int i = 0; i < delta; i++)
-                StopOldestRunningTimer();
-
-            lastDeliveriesCompleted = player.deliveriesCompleted;
-        }
+        UpdateTextDisplay();
     }
 
-    private void UpdateTimer(ref float timer, ref float penaltyClock, bool running, TextMeshProUGUI text, int index)
+    void StartTimer()
     {
-        if (!running || text == null) return;
-
-        timer += Time.deltaTime;
-
-        bool late = timer > deadlineSeconds;
-
-        text.text = late
-            ? $"Time {index}: {timer:F1}s  (LATE)"
-            : $"Time {index}: {timer:F1}s";
-
-        if (!late || MoneyManager.Instance == null)
-            return;
-
-        penaltyClock += Time.deltaTime;
-        if (penaltyClock >= 1f)
-        {
-            penaltyClock = 0f;
-            MoneyManager.Instance.TrySpend(latePenaltyPerSecond);
-        }
+        isTimerRunning = true;
+        currentTime = timeLimit;
+        IsLate = false;
+        if (lateMessage != null) lateMessage.SetActive(false);
     }
 
-    private void StartNextTimer()
+    void StopTimer()
     {
-        if (!timer1Running)
-        {
-            timer1 = 0f;
-            penaltyClock1 = 0f;
-            timer1Running = true;
-            timerText1.gameObject.SetActive(true);
-            return;
-        }
-
-        if (!timer2Running)
-        {
-            timer2 = 0f;
-            penaltyClock2 = 0f;
-            timer2Running = true;
-            timerText2.gameObject.SetActive(true);
-        }
+        isTimerRunning = false;
+        LastDeliveryTime = timeLimit - currentTime;
+        ResetToStart();
     }
 
-    private void StopOldestRunningTimer()
+    void ResetToStart()
     {
-        if (!timer1Running && !timer2Running) return;
+        isTimerRunning = false;
+        currentTime = timeLimit;
+        IsLate = false;
+        if (lateMessage != null) lateMessage.SetActive(false);
+        UpdateTextDisplay();
+    }
 
-        if (timer1Running && !timer2Running) { timer1Running = false; return; }
-        if (!timer1Running && timer2Running) { timer2Running = false; return; }
+    void UpdateTextDisplay()
+    {
+        if (timerText != null)
+        {
+            float timeToShow = Mathf.Ceil(currentTime);
+            float minutes = Mathf.FloorToInt(timeToShow / 60);
+            float seconds = Mathf.FloorToInt(timeToShow % 60);
 
-        if (timer1 >= timer2) timer1Running = false;
-        else timer2Running = false;
+            timerText.text = string.Format("Time: {0:00}:{1:00}", minutes, seconds);
+
+            if (currentTime <= 10 && isTimerRunning) timerText.color = Color.red;
+            else timerText.color = Color.white;
+        }
     }
 }

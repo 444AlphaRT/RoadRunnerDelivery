@@ -14,11 +14,11 @@ public class DeliveryTimer : MonoBehaviour
 
     private void Start()
     {
-        // Make sure the timer text starts hidden and empty
+        // התחלה: מציג 0.0
         if (timerText != null)
         {
-            timerText.text = "";
-            timerText.gameObject.SetActive(false);
+            timerText.gameObject.SetActive(true);
+            timerText.text = "Time: 0.0s";
         }
     }
 
@@ -46,6 +46,7 @@ public class DeliveryTimer : MonoBehaviour
         }
     }
 
+    // --- כאן השינוי ---
     public void StopTimer()
     {
         if (!isRunning)
@@ -53,11 +54,14 @@ public class DeliveryTimer : MonoBehaviour
 
         isRunning = false;
 
-        LastDeliveryTime = currentTime;   // Save the final time
+        // 1. שמירת הזמן הסופי (קריטי לחישוב הניקוד ב-DeliveryPoint)
+        LastDeliveryTime = currentTime;
 
+        // 2. איפוס הטיימר והתצוגה לאפס מייד
+        currentTime = 0f;
         if (timerText != null)
         {
-            timerText.text = $"Time: {LastDeliveryTime:F1}s";
+            timerText.text = "Time: 0.0s";
         }
     }
 
@@ -68,8 +72,8 @@ public class DeliveryTimer : MonoBehaviour
 
         if (timerText != null)
         {
-            timerText.text = "";
-            timerText.gameObject.SetActive(false);
+            timerText.gameObject.SetActive(true);
+            timerText.text = "Time: 0.0s";
         }
     }
 }

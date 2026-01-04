@@ -3,93 +3,102 @@ using System.Collections;
 
 public class OpeningSequence : MonoBehaviour
 {
+    [Header("Settings")]
+    [Tooltip("סמני ב-V אם את רוצה לדלג על מסך הפתיחה ולהתחיל ישר")]
+    [SerializeField] private bool skipIntroScreen = false; // <-- המתג החדש
+
     [Header("References")]
-    [SerializeField] private PlayerController player;          // Reference to the PlayerController
-    [SerializeField] private GameObject introPanel;            // The intro screen panel
+    [SerializeField] private PlayerController player;
+    [SerializeField] private GameObject introPanel;
 
     [Header("UI Elements Hidden During Intro")]
-    [SerializeField] private GameObject[] uiToHideDuringIntro; // HUD elements to hide before Start
+    [SerializeField] private GameObject[] uiToHideDuringIntro;
 
-    [Header("Post-Start Text")]
-    [SerializeField] private GameObject welcomeTextObject;     // Big welcome text shown after Start
-    [SerializeField] private HintManager hintManager;          // Hint manager for the first delivery
+    [Header("Post-Start Welcome Box")]
+    [Tooltip("גררי לכאן את ה-Panel שיצרת עם הרקע וההוראות")]
+    [SerializeField] private GameObject welcomePanelObject;
+
+    [Tooltip("כמה שניות ההודעה תופיע על המסך")]
+    [SerializeField] private float welcomeDuration = 5f;
 
     private void Awake()
     {
-        // Auto-assign this object as introPanel if none is set
         if (introPanel == null)
             introPanel = gameObject;
     }
 
     private void Start()
     {
-        // Disable player movement at the beginning
+        // בדיקה: אם בחרנו לדלג על הפתיחה, נפעיל ישר את המשחק
+        if (skipIntroScreen)
+        {
+            // מוודאים שמסך הפתיחה כבוי למקרה שהוא דלוק בסצנה
+            if (introPanel != null) introPanel.SetActive(false);
+
+            // מפעילים את פונקציית ההתחלה מייד
+            OnStartGamePressed();
+            return;
+        }
+
+        // --- מכאן זה הקוד הרגיל (אם לא דילגנו) ---
+
+        // הקפאת השחקן
         if (player != null)
             player.canMove = false;
 
-        // Make sure intro panel is visible
+        // הצגת מסך הפתיחה
         if (introPanel != null)
             introPanel.SetActive(true);
 
-        // Hide HUD/UI elements until Start Game is pressed
+        // הסתרת ה-HUD
         if (uiToHideDuringIntro != null)
         {
             foreach (GameObject ui in uiToHideDuringIntro)
             {
-                if (ui != null)
-                    ui.SetActive(false);
+                if (ui != null) ui.SetActive(false);
             }
         }
 
-        // Hide welcome text until after Start
-        if (welcomeTextObject != null)
-            welcomeTextObject.SetActive(false);
-
-        // Ensure hints are fully disabled at the beginning
-        if (hintManager != null)
-            hintManager.StopHints();
+        // וידוא שהודעת ה-Welcome מוסתרת בהתחלה
+        if (welcomePanelObject != null)
+            welcomePanelObject.SetActive(false);
     }
 
-    // Called by the START GAME button
+    // הפונקציה שמופעלת ע"י כפתור START GAME (או אוטומטית אם דילגנו)
     public void OnStartGamePressed()
     {
-        // Hide the intro screen
+        // העלמת מסך הפתיחה
         if (introPanel != null)
             introPanel.SetActive(false);
 
-        // Show HUD/UI elements now that gameplay begins
+        // הצגת ה-HUD
         if (uiToHideDuringIntro != null)
         {
             foreach (GameObject ui in uiToHideDuringIntro)
             {
-                if (ui != null)
-                    ui.SetActive(true);
+                if (ui != null) ui.SetActive(true);
             }
         }
 
-        // Allow player movement
+        // שחרור השחקן
         if (player != null)
             player.canMove = true;
 
-        // Start sequence: welcome, then smart hints
+        // הפעלת רצף ה-Welcome (ההוראות)
         StartCoroutine(PostStartFlow());
     }
 
     private IEnumerator PostStartFlow()
     {
-        // 1) Show welcome explanation
-        if (welcomeTextObject != null)
-            welcomeTextObject.SetActive(true);
+        // 1) הצגת הקופסה המעוצבת
+        if (welcomePanelObject != null)
+            welcomePanelObject.SetActive(true);
 
-        // Keep the welcome text on screen for a few seconds
-        yield return new WaitForSeconds(4f);
+        // המתנה לפי הזמן שהגדרת
+        yield return new WaitForSeconds(welcomeDuration);
 
-        // Hide the welcome text
-        if (welcomeTextObject != null)
-            welcomeTextObject.SetActive(false);
-
-        // 2) Start the hint system for the first delivery
-        if (hintManager != null)
-            hintManager.BeginHintsForFirstDelivery();
+        // 2) העלמת הקופסה
+        if (welcomePanelObject != null)
+            welcomePanelObject.SetActive(false);
     }
 }

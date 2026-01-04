@@ -3,6 +3,10 @@ using System.Collections;
 
 public class OpeningSequence : MonoBehaviour
 {
+    [Header("Settings")]
+    [Tooltip("סמני ב-V אם את רוצה לדלג על מסך הפתיחה ולהתחיל ישר")]
+    [SerializeField] private bool skipIntroScreen = false; // <-- המתג החדש
+
     [Header("References")]
     [SerializeField] private PlayerController player;
     [SerializeField] private GameObject introPanel;
@@ -25,6 +29,19 @@ public class OpeningSequence : MonoBehaviour
 
     private void Start()
     {
+        // בדיקה: אם בחרנו לדלג על הפתיחה, נפעיל ישר את המשחק
+        if (skipIntroScreen)
+        {
+            // מוודאים שמסך הפתיחה כבוי למקרה שהוא דלוק בסצנה
+            if (introPanel != null) introPanel.SetActive(false);
+
+            // מפעילים את פונקציית ההתחלה מייד
+            OnStartGamePressed();
+            return;
+        }
+
+        // --- מכאן זה הקוד הרגיל (אם לא דילגנו) ---
+
         // הקפאת השחקן
         if (player != null)
             player.canMove = false;
@@ -45,10 +62,9 @@ public class OpeningSequence : MonoBehaviour
         // וידוא שהודעת ה-Welcome מוסתרת בהתחלה
         if (welcomePanelObject != null)
             welcomePanelObject.SetActive(false);
-
     }
 
-    // הפונקציה שמופעלת ע"י כפתור START GAME
+    // הפונקציה שמופעלת ע"י כפתור START GAME (או אוטומטית אם דילגנו)
     public void OnStartGamePressed()
     {
         // העלמת מסך הפתיחה
@@ -68,7 +84,7 @@ public class OpeningSequence : MonoBehaviour
         if (player != null)
             player.canMove = true;
 
-        // הפעלת רצף ה-Welcome
+        // הפעלת רצף ה-Welcome (ההוראות)
         StartCoroutine(PostStartFlow());
     }
 
@@ -84,7 +100,5 @@ public class OpeningSequence : MonoBehaviour
         // 2) העלמת הקופסה
         if (welcomePanelObject != null)
             welcomePanelObject.SetActive(false);
-
-
     }
 }

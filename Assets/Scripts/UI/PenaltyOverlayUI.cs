@@ -12,7 +12,7 @@ public class PenaltyOverlayUI : MonoBehaviour
     {
         Hide();
     }
- 
+
     public void ShowFreeze(string reason, float secondsLeft, int unpaidStrike, int maxStrikes)
     {
         if (rootPanel != null) rootPanel.SetActive(true);

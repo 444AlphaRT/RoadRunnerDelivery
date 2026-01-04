@@ -85,6 +85,6 @@ public class OpeningSequence : MonoBehaviour
         if (welcomePanelObject != null)
             welcomePanelObject.SetActive(false);
 
-      
+
     }
 }

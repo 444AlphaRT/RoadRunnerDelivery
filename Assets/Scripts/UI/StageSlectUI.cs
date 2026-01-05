@@ -24,6 +24,8 @@ public class StageSelectUI : MonoBehaviour
     {
         selectedSceneName = sceneName;
         UpdateSelectedStageText();
+
+        PlaySelectedStage();
     }
 
     /// <summary>

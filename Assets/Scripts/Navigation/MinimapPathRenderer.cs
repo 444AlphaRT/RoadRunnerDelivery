@@ -12,6 +12,10 @@ public class MinimapPathRenderer : MonoBehaviour
     [SerializeField] private PlayerController playerController;
     [SerializeField] private bool updateEveryFrame = true;
 
+    [Header("Line Colors")]
+    [SerializeField] private Color noPackageColor = Color.magenta;
+    [SerializeField] private Color hasPackageColor = Color.cyan;
+
     private LineRenderer line;
 
     private void Awake()
@@ -36,8 +40,10 @@ public class MinimapPathRenderer : MonoBehaviour
 
     public void UpdatePath()
     {
-        if (pathfinder == null || network == null || line == null ||
-            player == null || playerController == null)
+        if (line == null)
+            return;
+
+        if (pathfinder == null || network == null || player == null || playerController == null)
         {
             line.positionCount = 0;
             return;
@@ -50,6 +56,10 @@ public class MinimapPathRenderer : MonoBehaviour
             line.positionCount = 0;
             return;
         }
+
+        Color targetColor = playerController.HasPackage ? hasPackageColor : noPackageColor;
+        line.startColor = targetColor;
+        line.endColor = targetColor;
 
         Waypoint start = network.FindClosest(player.position);
         Waypoint goal = network.FindClosest(currentTarget.position);

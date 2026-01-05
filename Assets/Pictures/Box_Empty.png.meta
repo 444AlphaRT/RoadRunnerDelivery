@@ -1,19 +1,19 @@
 fileFormatVersion: 2
-guid: e6ff93ca594bf594c8ef063c68827cfb
+guid: f34184976b8b445efbf364f98b0cbcd5
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7308752620957247725
-    second: ChatGPT Image Dec 31, 2025, 05_26_37 PM_0
+      213: 3113463218879694239
+    second: Box_Empty 1_0
   - first:
-      213: -4546676473416814440
-    second: ChatGPT Image Dec 31, 2025, 05_26_37 PM_1
+      213: -6358598801983488584
+    second: Box_Empty 1_1
   - first:
-      213: -3751162737872643350
-    second: ChatGPT Image Dec 31, 2025, 05_26_37 PM_2
+      213: 8404257443519190412
+    second: Box_Empty 1_2
   - first:
-      213: -8844468510077915792
-    second: ChatGPT Image Dec 31, 2025, 05_26_37 PM_3
+      213: 1403387789147053278
+    second: Box_Empty 1_3
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -106,19 +106,6 @@ TextureImporter:
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
-    buildTarget: Android
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
     buildTarget: WebGL
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -135,7 +122,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ChatGPT Image Dec 31, 2025, 05_26_37 PM_0
+      name: Box_Empty 1_0
       rect:
         serializedVersion: 2
         x: 11
@@ -150,14 +137,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: de8ac5b09c7ed6560800000000000000
-      internalID: 7308752620957247725
+      spriteID: f95819e3d4e353b20800000000000000
+      internalID: 3113463218879694239
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChatGPT Image Dec 31, 2025, 05_26_37 PM_1
+      name: Box_Empty 1_1
       rect:
         serializedVersion: 2
         x: 1041
@@ -172,14 +159,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8907d5536d5f6e0c0800000000000000
-      internalID: -4546676473416814440
+      spriteID: 8bdbc823418b1c7a0800000000000000
+      internalID: -6358598801983488584
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChatGPT Image Dec 31, 2025, 05_26_37 PM_2
+      name: Box_Empty 1_2
       rect:
         serializedVersion: 2
         x: 1041
@@ -194,14 +181,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: aea5b6a4d5131fbc0800000000000000
-      internalID: -3751162737872643350
+      spriteID: c85d4e10e9be1a470800000000000000
+      internalID: 8404257443519190412
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChatGPT Image Dec 31, 2025, 05_26_37 PM_3
+      name: Box_Empty 1_3
       rect:
         serializedVersion: 2
         x: 994
@@ -216,8 +203,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 07d6da500c2224580800000000000000
-      internalID: -8844468510077915792
+      spriteID: edc1b3e32c5d97310800000000000000
+      internalID: 1403387789147053278
       vertices: []
       indices: 
       edges: []
@@ -236,10 +223,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ChatGPT Image Dec 31, 2025, 05_26_37 PM_0: 7308752620957247725
-      ChatGPT Image Dec 31, 2025, 05_26_37 PM_1: -4546676473416814440
-      ChatGPT Image Dec 31, 2025, 05_26_37 PM_2: -3751162737872643350
-      ChatGPT Image Dec 31, 2025, 05_26_37 PM_3: -8844468510077915792
+      Box_Empty 1_0: 3113463218879694239
+      Box_Empty 1_1: -6358598801983488584
+      Box_Empty 1_2: 8404257443519190412
+      Box_Empty 1_3: 1403387789147053278
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

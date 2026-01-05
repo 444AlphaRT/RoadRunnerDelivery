@@ -88,7 +88,7 @@ public class PlayerController : MonoBehaviour
         // Manual refuel key
         if (Input.GetKeyDown(KeyCode.E))
         {
-            TryRefuelByKey();
+            FuelManager.Instance?.TryRefuel();
         }
     }
 
@@ -240,29 +240,4 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Refueled. Tank reset.");
     }
 
-    private void TryRefuelByKey()
-    {
-        int fuelLeft = maxDeliveriesPerTank - deliveriesOnCurrentTank;
-        if (fuelLeft >= maxDeliveriesPerTank) return;
-
-        int cost = fuelLeft == 0 ? refuelCostEmpty :
-                   fuelLeft == 1 ? refuelCostOneLeft : -1;
-
-        if (cost < 0) return;
-
-        if (MoneyManager.Instance == null)
-        {
-            Debug.LogWarning("MoneyManager.Instance is NULL!");
-            return;
-        }
-
-        if (!MoneyManager.Instance.TrySpend(cost))
-        {
-            Debug.Log("Not enough money to refuel.");
-            return;
-        }
-
-        Refuel();
-        Debug.Log($"Refueled by paying {cost} coins.");
-    }
 }

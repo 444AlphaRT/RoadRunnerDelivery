@@ -91,11 +91,15 @@ public class TrafficLightController : MonoBehaviour
         if (maxFineCap > 0)
             fine = Mathf.Min(fine, maxFineCap);
 
-        PenaltyManager.Instance.IssueTicket(
+        bool paid = PenaltyManager.Instance.IssueTicket(
             PenaltyManager.ViolationType.RedLight,
             fine,
             "RED LIGHT"
         );
+        if (paid)
+        {
+            AlertUI.Instance.Show("RED LIGHT! - Money deducted");
+        }
     }
 
     private void OnDrawGizmosSelected()

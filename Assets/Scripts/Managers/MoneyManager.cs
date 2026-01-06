@@ -76,11 +76,13 @@ public class MoneyManager : MonoBehaviour
     // --- Add money (affected by multiplier) ---
     public void AddMoney(int baseAmount)
     {
+        Debug.Log($"[Money BEFORE] = {CurrentMoney}");
         float scaled = baseAmount * IncomeMultiplier;
         int finalAmount = Mathf.RoundToInt(scaled);
 
         CurrentMoney += finalAmount;
         if (CurrentMoney < 0) CurrentMoney = 0;
+        Debug.Log($"[Money AFTER] = {CurrentMoney}");
 
         UpdateMoneyText();
     }
@@ -88,11 +90,15 @@ public class MoneyManager : MonoBehaviour
     // --- Spend money safely (not affected by multiplier) ---
     public bool TrySpend(int amount)
     {
+        Debug.Log($"[Money BEFORE] = {CurrentMoney}");
+
         if (CurrentMoney < amount)
             return false;
 
         CurrentMoney -= amount;
         UpdateMoneyText();
+        Debug.Log($"[Money AFTER] = {CurrentMoney}");
+
         return true;
     }
 

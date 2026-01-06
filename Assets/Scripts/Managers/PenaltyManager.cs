@@ -90,16 +90,17 @@ public class PenaltyManager : MonoBehaviour
         gameOverUI = FindFirstObjectByType<GameOverUI>(FindObjectsInactive.Include);
     }
 
-    public void IssueTicket(ViolationType type, int fineAmount, string reason)
+    public bool IssueTicket(ViolationType type, int fineAmount, string reason)
     {
-        if (isGameOver) return;
+      
+        if (isGameOver) return false;
 
         // Count total violations FIRST (paid or unpaid)
         violationsTotal++;
         if (violationsTotal >= maxViolationsBeforeGameOver)
         {
             TriggerGameOver("Too many violations.");
-            return;
+            return false;
         }
 
         // Try to rebind if needed
@@ -109,26 +110,26 @@ public class PenaltyManager : MonoBehaviour
         if (MoneyManager.Instance == null)
         {
             Debug.LogWarning("PenaltyManager: MoneyManager.Instance is NULL (fine cannot be paid).");
-            return;
+            return false;
         }
 
         // Try to pay
         bool paid = MoneyManager.Instance.TrySpend(fineAmount);
-        if (paid) return;
+        if (paid) return true;
 
         // Unpaid -> strike per type
         int strikes = IncrementUnpaid(type);
         if (strikes >= maxUnpaidStrikes)
         {
             TriggerGameOver("Too many unpaid fines.");
-            return;
+            return false;
         }
 
         // If player missing, we can't freeze, but we already counted the violation
         if (player == null)
         {
             Debug.LogWarning("PenaltyManager: Player missing, can't freeze.");
-            return;
+            return false;
         }
 
         float duration = (strikes == 1) ? firstTimeoutSeconds : secondTimeoutSeconds;
@@ -141,6 +142,7 @@ public class PenaltyManager : MonoBehaviour
         }
 
         freezeCoroutine = StartCoroutine(FreezeRoutine(duration, reason, strikes));
+        return false;
     }
 
     private int IncrementUnpaid(ViolationType type)

@@ -16,17 +16,16 @@ public class UpgradeManager : MonoBehaviour
     [SerializeField] private MoneyManager moneyManager;
     [SerializeField] private GameObject upgradePanel; // The whole upgrade screen
 
-    [Header("Speed Upgrade")]
+    [Header("Speed Upgrade (Acceleration)")]
     [SerializeField] private int maxSpeedLevel = 5;
-    [SerializeField] private float moveSpeedIncreasePerLevel = 0.2f;
-    [SerializeField] private float maxSpeedIncreasePerLevel = 0.4f;
+    [SerializeField] private float accelerationIncreasePerLevel = 1.0f;
     [SerializeField] private int speedFirstLevelCost = 5;
     [SerializeField] private int speedCostIncreasePerLevel = 3;
     [SerializeField] private Image speedFill;
 
-    [Header("Top Speed Upgrade")]
+    [Header("Top Speed Upgrade (Max Speed)")]
     [SerializeField] private int maxTopSpeedLevel = 5;
-    [SerializeField] private float topSpeedIncreasePerLevel = 0.5f;
+    [SerializeField] private float maxSpeedIncreasePerLevel = 0.4f;
     [SerializeField] private int topSpeedFirstLevelCost = 6;
     [SerializeField] private int topSpeedCostIncreasePerLevel = 4;
     [SerializeField] private Image topSpeedFill;
@@ -46,7 +45,7 @@ public class UpgradeManager : MonoBehaviour
     private int currentTopSpeedLevel = 0;
     private int currentIncomeLevel = 0;
 
-    private float baseMoveSpeed;
+    private float baseAcceleration;
     private float baseMaxSpeed;
 
     private UpgradeType currentSelection = UpgradeType.Speed;
@@ -61,7 +60,7 @@ public class UpgradeManager : MonoBehaviour
 
         if (player != null)
         {
-            baseMoveSpeed = player.moveSpeed;
+            baseAcceleration = player.acceleration;
             baseMaxSpeed = player.maxSpeed;
         }
 
@@ -90,7 +89,7 @@ public class UpgradeManager : MonoBehaviour
     {
         currentSelection = UpgradeType.Speed;
         UpdateCostText();
-        ShowFeedback("Speed selected");
+        ShowFeedback("Acceleration selected");
     }
 
     public void SelectTopSpeed()
@@ -130,16 +129,13 @@ public class UpgradeManager : MonoBehaviour
         {
             case UpgradeType.Speed:
                 currentSpeedLevel++;
-                player.moveSpeed = baseMoveSpeed + currentSpeedLevel * moveSpeedIncreasePerLevel;
-                player.maxSpeed = baseMaxSpeed + currentSpeedLevel * maxSpeedIncreasePerLevel;
-                ShowFeedback("Speed upgraded!");
+                player.acceleration = baseAcceleration + currentSpeedLevel * accelerationIncreasePerLevel;
+                ShowFeedback("Acceleration upgraded!");
                 break;
 
             case UpgradeType.TopSpeed:
                 currentTopSpeedLevel++;
-                player.maxSpeed = baseMaxSpeed
-                                  + (currentSpeedLevel * maxSpeedIncreasePerLevel)
-                                  + (currentTopSpeedLevel * topSpeedIncreasePerLevel);
+                player.maxSpeed = baseMaxSpeed + currentTopSpeedLevel * maxSpeedIncreasePerLevel;
                 ShowFeedback("Top speed upgraded!");
                 break;
 

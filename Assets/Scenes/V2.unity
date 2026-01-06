@@ -2162,7 +2162,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 239.33, y: -171.9218}
+  m_AnchoredPosition: {x: 239.33, y: -195.67}
   m_SizeDelta: {x: -478.67, y: -343.8436}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &286589383
@@ -2775,8 +2775,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 747, y: 53}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 715, y: 37.066}
+  m_SizeDelta: {x: 85.2859, y: 28.131}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &397048732 stripped
 GameObject:
@@ -3089,7 +3089,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 820, y: 101.13}
+  m_AnchoredPosition: {x: 833, y: 73.001}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &420709947
@@ -4429,7 +4429,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 820, y: 65}
+  m_AnchoredPosition: {x: 833, y: 37.065994}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &670096333
@@ -4981,8 +4981,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 747, y: 90}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 741.8, y: 72.149}
+  m_SizeDelta: {x: 138.8859, y: 32.035}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &792784956
 GameObject:
@@ -5452,8 +5452,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 139, y: -171.92}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchoredPosition: {x: 158.5, y: -195.67}
+  m_SizeDelta: {x: 79.842, y: 68.9567}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &920097052
 GameObject:
@@ -7122,7 +7122,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 4.4045944, y: 0, z: 0, w: 0}
+  m_margin: {x: 4.4045944, y: -2.0037518, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -7152,8 +7152,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 936, y: 53}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 867, y: 35.083}
+  m_SizeDelta: {x: 47.7157, y: 28}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1219391847
 GameObject:
@@ -10444,13 +10444,12 @@ MonoBehaviour:
   moneyManager: {fileID: 2120397611}
   upgradePanel: {fileID: 1772922528}
   maxSpeedLevel: 5
-  moveSpeedIncreasePerLevel: 0.2
-  maxSpeedIncreasePerLevel: 0.4
+  accelerationIncreasePerLevel: 1
   speedFirstLevelCost: 5
   speedCostIncreasePerLevel: 3
   speedFill: {fileID: 1499370095}
   maxTopSpeedLevel: 5
-  topSpeedIncreasePerLevel: 0.5
+  maxSpeedIncreasePerLevel: 0.4
   topSpeedFirstLevelCost: 6
   topSpeedCostIncreasePerLevel: 4
   topSpeedFill: {fileID: 1780469099}
@@ -10698,8 +10697,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 936, y: 90}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 880.85, y: 65}
+  m_SizeDelta: {x: 63.457, y: 31.834}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1819387519
 MonoBehaviour:

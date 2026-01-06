@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider2D))]
 public class SpeedZone : MonoBehaviour
 {
-    [Header("Speed limit")]
+    [Header("Speed limit (Unity units/sec)")]
     [SerializeField] private float zoneMaxSpeed = 3.5f;
 
     [Header("Crossing detection")]
@@ -23,9 +23,13 @@ public class SpeedZone : MonoBehaviour
     [SerializeField] private int maxFineCap = 0;
 
     private BoxCollider2D box;
-    private Transform player;
+
+    private PlayerController player;
     private Rigidbody2D playerRb;
 
+    private bool isInside = false;
+
+    // Ticketing state
     private bool armed = true;
     private int localSpeedViolations = 0;
 
@@ -35,42 +39,14 @@ public class SpeedZone : MonoBehaviour
         box.isTrigger = true;
     }
 
-    private void Start()
-    {
-        TryAssignPlayer();
-    }
-
-    private void TryAssignPlayer()
-    {
-        if (player != null && playerRb != null) return;
-
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj == null) return;
-
-        player = playerObj.transform;
-        playerRb = playerObj.GetComponent<Rigidbody2D>();
-    }
-
     private void Update()
     {
-        if (box == null) return;
-
-        if (player == null || playerRb == null)
-            TryAssignPlayer();
-
-        if (player == null || playerRb == null)
-            return;
-
-        bool isInside = box.bounds.Contains(player.position);
-        if (!isInside)
-        {
-            armed = true;
-            return;
-        }
+        if (!isInside) return;
+        if (player == null || playerRb == null) return;
 
         float speed = playerRb.linearVelocity.magnitude;
 
-        // If we want one ticket per overspeed event, re-arm only after slowing down
+        // Re-arm only after slowing down (optional)
         if (requireSlowdownBeforeNextTicket && !armed)
         {
             if (speed <= zoneMaxSpeed)
@@ -90,7 +66,6 @@ public class SpeedZone : MonoBehaviour
                 return;
             }
 
-            // Local escalation counter (per speed zone)
             localSpeedViolations++;
 
             float fineFloat = baseSpeedFine * Mathf.Pow(fineMultiplierPerViolation, localSpeedViolations - 1);
@@ -99,7 +74,6 @@ public class SpeedZone : MonoBehaviour
             if (maxFineCap > 0)
                 fine = Mathf.Min(fine, maxFineCap);
 
-            // Report to PenaltyManager (PenaltyManager handles money/unpaid/timeouts/game over)
             PenaltyManager.Instance.IssueTicket(
                 PenaltyManager.ViolationType.Speed,
                 fine,
@@ -108,6 +82,44 @@ public class SpeedZone : MonoBehaviour
 
             armed = false;
         }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        // We only care about the player
+        PlayerController pc = other.GetComponent<PlayerController>();
+        if (pc == null) return;
+
+        player = pc;
+        playerRb = pc.GetComponent<Rigidbody2D>();
+
+        isInside = true;
+        armed = true;
+
+        // IMPORTANT: This is what makes CurrentSpeedLimit work (UI will now know there is a limit)
+        player.AddSpeedLimit(this, zoneMaxSpeed);
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        PlayerController pc = other.GetComponent<PlayerController>();
+        if (pc == null) return;
+
+        // Remove the speed limit when leaving the zone
+        pc.RemoveSpeedLimit(this);
+
+        isInside = false;
+        armed = true;
+    }
+
+    private void OnDisable()
+    {
+        // Safety: if the zone is disabled while player is inside, remove the limit
+        if (player != null)
+            player.RemoveSpeedLimit(this);
+
+        isInside = false;
+        armed = true;
     }
 
     private void OnDrawGizmosSelected()

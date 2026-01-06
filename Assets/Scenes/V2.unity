@@ -240,6 +240,7 @@ MonoBehaviour:
   - {fileID: 346641702}
   - {fileID: 1479378997}
   avoidRepeatingLastSpot: 1
+  managedExternally: 0
 --- !u!1 &15593636
 GameObject:
   m_ObjectHideFlags: 0
@@ -4345,6 +4346,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 2
   maxSpeed: 4
+  acceleration: 6
+  deceleration: 12
+  accelerationMultiplier: 0.5
+  turningAccelerationMultiplier: 0.5
   spriteAngleOffset: 0
   rotateMinSpeed: 0.05
   canMove: 0
@@ -4352,10 +4357,7 @@ MonoBehaviour:
   deliveriesCompleted: 0
   maxPackages: 2
   packagesHeld: 0
-  maxDeliveriesPerTank: 2
   outOfFuel: 0
-  refuelCostEmpty: 10
-  refuelCostOneLeft: 5
 --- !u!1 &666979540
 GameObject:
   m_ObjectHideFlags: 0
@@ -6064,6 +6066,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 718950914644974841, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
   m_PrefabInstance: {fileID: 989559588}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &989559590 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6019076696829096636, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
+  m_PrefabInstance: {fileID: 989559588}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f2fed5ee0cc1435186f9e8bd0e3269c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Waypoint
 --- !u!1 &1003943152
 GameObject:
   m_ObjectHideFlags: 0
@@ -6551,6 +6564,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 718950914644974841, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
   m_PrefabInstance: {fileID: 1100414101}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1100414103 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6019076696829096636, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
+  m_PrefabInstance: {fileID: 1100414101}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f2fed5ee0cc1435186f9e8bd0e3269c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Waypoint
 --- !u!1 &1122595449
 GameObject:
   m_ObjectHideFlags: 0
@@ -6690,6 +6714,7 @@ MonoBehaviour:
   - {fileID: 119793051}
   - {fileID: 1234018440}
   - {fileID: 1141686000}
+  managedExternally: 0
 --- !u!1 &1123661441
 GameObject:
   m_ObjectHideFlags: 0
@@ -7617,6 +7642,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 718950914644974841, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
   m_PrefabInstance: {fileID: 1256296908}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1256296910 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6019076696829096636, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
+  m_PrefabInstance: {fileID: 1256296908}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f2fed5ee0cc1435186f9e8bd0e3269c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Waypoint
 --- !u!1 &1263064442
 GameObject:
   m_ObjectHideFlags: 0
@@ -8271,6 +8307,10 @@ MonoBehaviour:
   - {fileID: 1941218380}
   - {fileID: 318234477}
   - {fileID: 1021689427}
+  - {fileID: 1256296910}
+  - {fileID: 989559590}
+  - {fileID: 1944828670}
+  - {fileID: 1100414103}
   maxNeighborDistance: 7
   obstacleMask:
     serializedVersion: 2
@@ -10227,7 +10267,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1759655910}
-  - component: {fileID: 1759655909}
+  - component: {fileID: 1759655911}
   m_Layer: 0
   m_Name: DeliveryManager
   m_TagString: Untagged
@@ -10235,19 +10275,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1759655909
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1759655908}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50be6338a6d11427b840f9cfd218794d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryTimer
-  timerText: {fileID: 390908134}
 --- !u!4 &1759655910
 Transform:
   m_ObjectHideFlags: 0
@@ -10263,6 +10290,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1759655911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1759655908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50be6338a6d11427b840f9cfd218794d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryTimer
+  timeLimit: 20
+  timerText1: {fileID: 390908134}
+  timerText2: {fileID: 0}
 --- !u!1 &1771409081
 GameObject:
   m_ObjectHideFlags: 0
@@ -11442,6 +11484,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 718950914644974841, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
   m_PrefabInstance: {fileID: 1944828668}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1944828670 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6019076696829096636, guid: fc08fc9ca2aaf4c3aa72cc3a3c85b5f1, type: 3}
+  m_PrefabInstance: {fileID: 1944828668}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f2fed5ee0cc1435186f9e8bd0e3269c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Waypoint
 --- !u!1 &1959079432
 GameObject:
   m_ObjectHideFlags: 0

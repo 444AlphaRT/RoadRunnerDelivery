@@ -1,8 +1,9 @@
+// RandomPickupLocation.cs
 using UnityEngine;
 
 public class RandomPickupLocation : MonoBehaviour
 {
-    [Header("Possible pickup spots (Pizza, Burger, etc.)")]
+    [Header("Spots (can be overridden by a manager)")]
     [SerializeField] private Transform[] pickupSpots;
 
     [Header("Optional: icons that match each spot index")]
@@ -11,11 +12,27 @@ public class RandomPickupLocation : MonoBehaviour
     [Header("Behavior")]
     [SerializeField] private bool avoidRepeatingLastSpot = true;
 
+    [Header("External Control")]
+    [Tooltip("If true, this component will NOT auto-randomize on Start(). A manager is expected to control it.")]
+    [SerializeField] private bool managedExternally = false;
+
     private int lastIndex = -1;
 
     private void Start()
     {
+        // If a manager controls this pickup, do not move it automatically.
+        if (managedExternally) return;
+
         MoveToRandomSpot();
+    }
+
+    /// <summary>
+    /// Allows a manager (e.g., DualPickupManager) to inject a shared spots list,
+    /// avoiding mismatched arrays between scripts.
+    /// </summary>
+    public void SetSpots(Transform[] sharedSpots)
+    {
+        pickupSpots = sharedSpots;
     }
 
     public void MoveToRandomSpot()
@@ -30,6 +47,7 @@ public class RandomPickupLocation : MonoBehaviour
         if (newIndex < 0) return;
 
         ApplyIndex(newIndex);
+        Physics2D.SyncTransforms();
     }
 
     public void SetSpotIndex(int index)
@@ -53,6 +71,7 @@ public class RandomPickupLocation : MonoBehaviour
         }
 
         ApplyIndex(index);
+        Physics2D.SyncTransforms();
     }
 
     private int ChooseRandomIndex()
@@ -74,6 +93,7 @@ public class RandomPickupLocation : MonoBehaviour
             return idx;
         }
 
+        // Fallback: pick the first valid spot
         for (int i = 0; i < pickupSpots.Length; i++)
         {
             if (pickupSpots[i] != null) return i;

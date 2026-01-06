@@ -17,11 +17,21 @@ public class DualPickupManager : MonoBehaviour
 
     private void Start()
     {
+        // Make sure both pickups use the exact same spot list
+        if (pickupA != null) pickupA.SetSpots(pickupSpots);
+        if (pickupB != null) pickupB.SetSpots(pickupSpots);
+
         RespawnBothPickups();
     }
 
     public void RespawnBothPickups()
     {
+        if (pickupA == null || pickupB == null)
+        {
+            Debug.LogWarning("DualPickupManager: pickupA or pickupB reference is missing.");
+            return;
+        }
+
         if (pickupSpots == null || pickupSpots.Length < 2)
         {
             Debug.LogWarning("DualPickupManager: Need at least 2 pickup spots for two pickups.");
@@ -32,12 +42,37 @@ public class DualPickupManager : MonoBehaviour
         int idxA = PickIndexExcluding(-1, avoidRepeatingLastPair ? lastIndexA : -1);
         int idxB = PickIndexExcluding(idxA, avoidRepeatingLastPair ? lastIndexB : -1);
 
-        // Move pickup objects and update their icons
-        Apply(pickupA, idxA);
-        Apply(pickupB, idxB);
+        if (idxA < 0 || idxB < 0)
+        {
+            Debug.LogWarning("DualPickupManager: Failed to pick valid indices for both pickups.");
+            return;
+        }
+
+        // Move + icon update (RandomPickupLocation is the source of truth)
+        pickupA.SetSpotIndex(idxA);
+        pickupB.SetSpotIndex(idxB);
 
         lastIndexA = idxA;
         lastIndexB = idxB;
+
+        // IMPORTANT FIX:
+        // Re-enable pickup visuals (markers) after respawn.
+        ResetPickupVisuals(pickupA);
+        ResetPickupVisuals(pickupB);
+
+        // Good practice after moving transforms that affect colliders/triggers
+        Physics2D.SyncTransforms();
+    }
+
+    private void ResetPickupVisuals(RandomPickupLocation pickup)
+    {
+        if (pickup == null) return;
+
+        DeliveryPoint dp = pickup.GetComponent<DeliveryPoint>();
+        if (dp != null)
+        {
+            dp.ResetPickupVisuals();
+        }
     }
 
     private int PickIndexExcluding(int mustNotBe, int alsoPreferNotBe)
@@ -67,26 +102,5 @@ public class DualPickupManager : MonoBehaviour
         }
 
         return -1;
-    }
-
-    private void Apply(RandomPickupLocation pickup, int index)
-    {
-        if (pickup == null)
-        {
-            Debug.LogWarning("DualPickupManager: Pickup reference is missing!");
-            return;
-        }
-
-        if (index < 0 || index >= pickupSpots.Length || pickupSpots[index] == null)
-        {
-            Debug.LogWarning("DualPickupManager: Invalid pickup spot index.");
-            return;
-        }
-
-        // Move pickup object
-        pickup.transform.position = pickupSpots[index].position;
-
-        // Tell pickup to show the correct icon (new method below)
-        pickup.SetSpotIndex(index);
     }
 }

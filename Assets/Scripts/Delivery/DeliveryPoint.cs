@@ -13,14 +13,14 @@ public class DeliveryPoint : MonoBehaviour
     [SerializeField] private PointType pointType;
 
     [Header("Visual Markers")]
-    [SerializeField] private GameObject marker;
-    [SerializeField] private GameObject dropoffMarker;
+    [SerializeField] private GameObject marker;          // The marker shown on this point (pickup or dropoff UI icon)
+    [SerializeField] private GameObject dropoffMarker;   // Optional: a different marker to show when dropoff becomes active
 
     [Header("Hint UI (optional)")]
     [SerializeField] private TextMeshProUGUI hintText;
 
     [Header("References (Dropoff only)")]
-    [SerializeField] private Transform pickupPointForThisRoute;
+    [SerializeField] private Transform pickupPointForThisRoute; // Used for distance calculation (optional)
 
     [Header("Reward Configuration - Base Pay")]
     [SerializeField] private float minDistanceForPay = 1f;
@@ -49,32 +49,33 @@ public class DeliveryPoint : MonoBehaviour
     [SerializeField] private int minCoinsPerDelivery = 2;
     [SerializeField] private int maxCoinsPerDelivery = 15;
 
-    // --- שינוי: שומרים מקום לשני סוגי הטיימרים ---
-    private DeliveryTimer oldTimer;           // לשימוש ב-V2
-    private DeliveryTimersLevel3 v3Timer;     // לשימוש ב-V3
-    // ----------------------------------------------
-
+    // Existing systems in your project
+    private DeliveryTimer deliveryTimer;         // Your only timer system
     private UpgradeUIController upgradeUI;
+    private DualPickupManager dualPickupManager;
 
     private void Start()
     {
-        // מנסים למצוא את שני הטיימרים. 
-        // ב-V2 הוא ימצא רק את oldTimer. ב-V3 ימצא רק את v3Timer.
-        oldTimer = FindAnyObjectByType<DeliveryTimer>();
-        v3Timer = FindAnyObjectByType<DeliveryTimersLevel3>();
-
+        // Find existing systems in the scene (only those you actually have)
+        deliveryTimer = FindAnyObjectByType<DeliveryTimer>();
         upgradeUI = FindAnyObjectByType<UpgradeUIController>();
+        dualPickupManager = FindAnyObjectByType<DualPickupManager>();
 
+        // Initialize markers/hints
         if (pointType == PointType.Pickup)
         {
-            if (marker != null) marker.SetActive(true);
-            if (dropoffMarker != null) dropoffMarker.SetActive(false);
-            if (hintText != null) hintText.text = "Drive to the pickup icon to collect an order.";
+            ResetPickupVisuals();
+
+            if (hintText != null)
+                hintText.text = "Drive to a pickup icon to collect an order.";
         }
         else
         {
             if (marker != null) marker.SetActive(true);
         }
+
+        if (deliveryTimer == null)
+            Debug.LogWarning("DeliveryPoint: No DeliveryTimer found in the scene.");
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -83,34 +84,49 @@ public class DeliveryPoint : MonoBehaviour
         if (player == null) return;
 
         if (pointType == PointType.Pickup)
-        {
             HandlePickup(player);
-        }
-        else if (pointType == PointType.Dropoff)
-        {
+        else
             HandleDropoff(player);
-        }
+    }
+
+    // Useful for dual-pickup stages: the manager can call this after respawning pickups
+    public void ResetPickupVisuals()
+    {
+        if (marker != null) marker.SetActive(true);
+        if (dropoffMarker != null) dropoffMarker.SetActive(false);
     }
 
     private void HandlePickup(PlayerController player)
     {
+        // Your player currently supports only one package at a time
         if (player.HasPackage) return;
 
         player.PickUpPackage();
 
         if (upgradeUI != null)
-        {
             upgradeUI.OnPickupStarted(player.deliveriesCompleted);
-        }
 
-        // אם אנחנו ב-V2, מפעילים את הטיימר הישן ידנית.
-        // ב-V3 הטיימר מזהה לבד שיש חבילה ולכן לא חייבים לקרוא לו, אבל זה לא מזיק.
-        if (oldTimer != null) oldTimer.StartTimer();
+        // Start timing this delivery (one slot)
+        if (deliveryTimer != null)
+            deliveryTimer.StartNextTimer();
 
+        // Disable THIS pickup marker, show dropoff marker
         if (marker != null) marker.SetActive(false);
         if (dropoffMarker != null) dropoffMarker.SetActive(true);
 
-        if (hintText != null) hintText.text = "Follow the purple path and deliver the package.";
+        if (hintText != null)
+            hintText.text = "Follow the purple path and deliver the package.";
+
+        // In stages without DualPickupManager, move this pickup away after pickup
+        if (dualPickupManager == null)
+        {
+            RandomPickupLocation randomPickup = GetComponent<RandomPickupLocation>();
+            if (randomPickup != null)
+            {
+                randomPickup.MoveToRandomSpot();
+                Physics2D.SyncTransforms();
+            }
+        }
     }
 
     private void HandleDropoff(PlayerController player)
@@ -120,79 +136,66 @@ public class DeliveryPoint : MonoBehaviour
         player.DeliverPackage();
 
         if (upgradeUI != null)
-        {
             upgradeUI.OnDeliveryCompleted(player.deliveriesCompleted);
-        }
 
+        // Stop timer and read elapsed time from your DeliveryTimer API
         float time = 0f;
+        if (deliveryTimer != null)
+        {
+            deliveryTimer.StopOldestRunningTimer();
+            time = deliveryTimer.LastDeliveryTime;
+        }
+
         float distance = 0f;
-        bool isLate = false; // ברירת מחדל: לא מאחרים
-
-        // --- בדיקה איזה טיימר פעיל ---
-        if (v3Timer != null)
-        {
-            // אנחנו ב-V3: לוקחים נתונים מהטיימר החדש
-            time = v3Timer.LastDeliveryTime;
-            isLate = v3Timer.IsLate; // האם הגיע ל-0?
-        }
-        else if (oldTimer != null)
-        {
-            // אנחנו ב-V2: עובדים רגיל עם הטיימר הישן
-            oldTimer.StopTimer();
-            time = oldTimer.LastDeliveryTime;
-            isLate = false; // ב-V2 אין מושג של "איחור" בקוד הזה
-        }
-        // -----------------------------
-
         if (pickupPointForThisRoute != null)
-        {
             distance = Vector2.Distance(pickupPointForThisRoute.position, transform.position);
-        }
 
-        // שולחים את נתון האיחור לחישוב
-        int coins = CalculateReward(distance, time, isLate);
+        // No "late" system here, so isLate is always false
+        int coins = CalculateReward(distance, time, isLate: false);
 
         if (MoneyManager.Instance != null)
-        {
             MoneyManager.Instance.AddMoney(coins);
-        }
 
         if (PlayerStatsManager.Instance != null)
-        {
             PlayerStatsManager.Instance.RegisterDelivery(coins);
-        }
 
-        Debug.Log($"Delivery complete -> distance={distance:F1}, time={time:F1}s, coins={coins}, Late={isLate}");
+        Debug.Log($"Delivery complete -> distance={distance:F1}, time={time:F1}s, coins={coins}");
 
+        // Move dropoff to a new random spot
         RandomDropoffLocation randomDropoff = GetComponent<RandomDropoffLocation>();
         if (randomDropoff != null)
         {
             randomDropoff.MoveToRandomSpot();
+            Physics2D.SyncTransforms();
         }
 
-        if (hintText != null) hintText.text = "Great! Drive to the pickup icon for your next order.";
+        // If Stage 3 has two pickups, refresh both pickups for the next round
+        if (dualPickupManager != null)
+        {
+            dualPickupManager.RespawnBothPickups();
+            Physics2D.SyncTransforms();
+        }
+
+        // Reset local markers (ready for next cycle)
+        if (marker != null) marker.SetActive(true);
+        if (dropoffMarker != null) dropoffMarker.SetActive(false);
+
+        if (hintText != null)
+            hintText.text = "Great! Drive to a pickup icon for your next order.";
     }
 
-    // הוספתי פרמטר שלישי: isLate
     private int CalculateReward(float distance, float time, bool isLate)
     {
-        // --- אם איחרנו, מחזירים מייד 1 ויוצאים ---
         if (isLate)
-        {
             return 1;
-        }
-        // ----------------------------------------
 
         if (distance < minDistanceForPay) distance = minDistanceForPay;
         if (time < minTimeSafe) time = minTimeSafe;
 
         float basePay = distance * basePayPerUnit;
 
-        bool isFarDelivery = distance >= farDistanceThreshold;
-        if (isFarDelivery)
-        {
+        if (distance >= farDistanceThreshold)
             basePay *= farDistanceMultiplier;
-        }
 
         float expectedTime = distance / expectedSpeedUnitsPerSecond;
         float ratio = time / expectedTime;
@@ -200,27 +203,21 @@ public class DeliveryPoint : MonoBehaviour
         float tipRate = 0f;
 
         if (ratio <= tipFastThresholdRatio)
-        {
             tipRate = tipRateFast;
-        }
         else if (ratio <= tipNormalThresholdRatio)
-        {
             tipRate = tipRateNormal;
-        }
         else if (ratio <= tipSlowThresholdRatio)
         {
             bool customerNice = Random.value < niceCustomerProbability;
             tipRate = customerNice ? tipRateSlow : 0f;
         }
         else
-        {
             tipRate = 0f;
-        }
 
         float totalPay = basePay * (1f + tipRate);
         int coins = Mathf.RoundToInt(totalPay);
-        coins = Mathf.Clamp(coins, minCoinsPerDelivery, maxCoinsPerDelivery);
 
+        coins = Mathf.Clamp(coins, minCoinsPerDelivery, maxCoinsPerDelivery);
         return coins;
     }
 }

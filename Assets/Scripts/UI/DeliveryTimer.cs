@@ -3,77 +3,125 @@ using TMPro;
 
 public class DeliveryTimer : MonoBehaviour
 {
+    [Header("Settings")]
+    [SerializeField] private float timeLimit = 60f;
+
     [Header("UI References")]
-    [SerializeField] private TextMeshProUGUI timerText;   // UI text to display the timer
+    [SerializeField] private TextMeshProUGUI timerText1;
+    [SerializeField] private TextMeshProUGUI timerText2; // optional
 
-    private bool isRunning = false;
-    private float currentTime = 0f;
+    private bool slot1Running = false;
+    private bool slot2Running = false;
 
-    public float LastDeliveryTime { get; private set; }   // Time of last completed delivery
-    public bool IsRunning => isRunning;
+    private float slot1Time;
+    private float slot2Time;
+
+    public float LastDeliveryTime { get; private set; }
+
+    private bool HasTwoSlots => timerText2 != null;
 
     private void Start()
     {
-        // התחלה: מציג 0.0
-        if (timerText != null)
-        {
-            timerText.gameObject.SetActive(true);
-            timerText.text = "Time: 0.0s";
-        }
+        ResetAll();
     }
 
     private void Update()
     {
-        if (!isRunning)
+        if (slot1Running)
+        {
+            slot1Time -= Time.deltaTime;
+            if (slot1Time < 0f) slot1Time = 0f;
+            UpdateText(timerText1, 1, slot1Time);
+        }
+
+        if (HasTwoSlots && slot2Running)
+        {
+            slot2Time -= Time.deltaTime;
+            if (slot2Time < 0f) slot2Time = 0f;
+            UpdateText(timerText2, 2, slot2Time);
+        }
+    }
+
+    // Called when a pickup is collected
+    public void StartNextTimer()
+    {
+        if (!slot1Running)
+        {
+            slot1Running = true;
+            slot1Time = timeLimit;
+            UpdateText(timerText1, 1, slot1Time);
             return;
+        }
 
-        currentTime += Time.deltaTime;
-
-        if (timerText != null)
+        if (HasTwoSlots && !slot2Running)
         {
-            timerText.text = $"Time: {currentTime:F1}s";
+            slot2Running = true;
+            slot2Time = timeLimit;
+            UpdateText(timerText2, 2, slot2Time);
         }
     }
 
-    public void StartTimer()
+    // Called when a delivery is completed
+    public void StopOldestRunningTimer()
     {
-        currentTime = 0f;
-        isRunning = true;
-
-        if (timerText != null)
+        if (slot1Running && !slot2Running)
         {
-            timerText.gameObject.SetActive(true);
-        }
-    }
-
-    // --- כאן השינוי ---
-    public void StopTimer()
-    {
-        if (!isRunning)
+            StopSlot1();
             return;
+        }
 
-        isRunning = false;
-
-        // 1. שמירת הזמן הסופי (קריטי לחישוב הניקוד ב-DeliveryPoint)
-        LastDeliveryTime = currentTime;
-
-        // 2. איפוס הטיימר והתצוגה לאפס מייד
-        currentTime = 0f;
-        if (timerText != null)
+        if (!slot1Running && slot2Running)
         {
-            timerText.text = "Time: 0.0s";
+            StopSlot2();
+            return;
+        }
+
+        if (slot1Running && slot2Running)
+        {
+            if (slot1Time <= slot2Time)
+                StopSlot1();
+            else
+                StopSlot2();
         }
     }
 
-    public void ResetTimerDisplay()
+    private void StopSlot1()
     {
-        currentTime = 0f;
-        isRunning = false;
+        slot1Running = false;
+        LastDeliveryTime = timeLimit - slot1Time;
+        slot1Time = timeLimit;
+        UpdateText(timerText1, 1, slot1Time);
+    }
 
-        if (timerText != null)
-        {
-            timerText.gameObject.SetActive(true);
-            timerText.text = "Time: 0.0s";
-        }
+    private void StopSlot2()
+    {
+        slot2Running = false;
+        LastDeliveryTime = timeLimit - slot2Time;
+        slot2Time = timeLimit;
+        UpdateText(timerText2, 2, slot2Time);
+    }
+
+    public void ResetAll()
+    {
+        slot1Running = false;
+        slot2Running = false;
+
+        slot1Time = timeLimit;
+        slot2Time = timeLimit;
+        LastDeliveryTime = 0f;
+
+        UpdateText(timerText1, 1, slot1Time);
+        if (HasTwoSlots)
+            UpdateText(timerText2, 2, slot2Time);
+    }
+
+    private void UpdateText(TextMeshProUGUI text, int index, float time)
+    {
+        if (text == null) return;
+
+        int seconds = Mathf.CeilToInt(time);
+        text.text = HasTwoSlots
+            ? $"Delivery {index}: {seconds}s"
+            : $"Time: {seconds}s";
     }
 }

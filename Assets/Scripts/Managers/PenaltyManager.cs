@@ -40,6 +40,9 @@ public class PenaltyManager : MonoBehaviour
     private Coroutine freezeCoroutine;
     private bool isGameOver = false;
 
+    [Header("Notifications")]
+    [SerializeField] private FineNotification fineNotification;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -112,10 +115,32 @@ public class PenaltyManager : MonoBehaviour
             Debug.LogWarning("PenaltyManager: MoneyManager.Instance is NULL (fine cannot be paid).");
             return false;
         }
+        bool paid = MoneyManager.Instance.TrySpend(fineAmount);
 
         // Try to pay
-        bool paid = MoneyManager.Instance.TrySpend(fineAmount);
-        if (paid) return true;
+        if (paid)
+        {
+            // --- התיקון 2: הפעלת ההודעה הנכונה ---
+            if (fineNotification != null)
+            {
+                if (type == ViolationType.RedLight)
+                {
+                    Debug.Log("TRYING TO STOP GAME NOW!");
+                    // רמזור אדום -> הודעה עוצרת משחק (באנגלית)
+                    fineNotification.ShowRedLightPenalty(fineAmount);
+                }
+                else
+                {
+                    // עבירה אחרת (מהירות) -> הודעה רגילה
+                    fineNotification.ShowFine(fineAmount);
+                }
+            }else
+            {
+                Debug.Log("ERROR: FineNotification is missing in Inspector!");
+            }
+            // -------------------------------------
+            return true;
+        }
 
         // Unpaid -> strike per type
         int strikes = IncrementUnpaid(type);

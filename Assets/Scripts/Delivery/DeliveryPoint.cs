@@ -138,20 +138,30 @@ public class DeliveryPoint : MonoBehaviour
         if (upgradeUI != null)
             upgradeUI.OnDeliveryCompleted(player.deliveriesCompleted);
 
-        // Stop timer and read elapsed time from your DeliveryTimer API
+        // --- חישוב הזמן והאם היה איחור ---
         float time = 0f;
+        bool isLate = false; // ברירת מחדל
+
         if (deliveryTimer != null)
         {
             deliveryTimer.StopOldestRunningTimer();
             time = deliveryTimer.LastDeliveryTime;
+
+            // בדיקה: אם הזמן נגמר (שווה ל-0) או שהטיימר סימן איחור
+            // (תלוי איך מימשת את DeliveryTimer, אבל לרוב time <= 0 אומר איחור)
+            if (deliveryTimer.IsLate || time <= 0)
+            {
+                isLate = true;
+            }
         }
+        // ----------------------------------
 
         float distance = 0f;
         if (pickupPointForThisRoute != null)
             distance = Vector2.Distance(pickupPointForThisRoute.position, transform.position);
 
-        // No "late" system here, so isLate is always false
-        int coins = CalculateReward(distance, time, isLate: false);
+        // כאן התיקון החשוב: אנחנו שולחים את המשתנה isLate האמיתי במקום false קבוע
+        int coins = CalculateReward(distance, time, isLate);
 
         if (MoneyManager.Instance != null)
             MoneyManager.Instance.AddMoney(coins);
@@ -159,7 +169,7 @@ public class DeliveryPoint : MonoBehaviour
         if (PlayerStatsManager.Instance != null)
             PlayerStatsManager.Instance.RegisterDelivery(coins);
 
-        Debug.Log($"Delivery complete -> distance={distance:F1}, time={time:F1}s, coins={coins}");
+        Debug.Log($"Delivery complete -> distance={distance:F1}, time={time:F1}s, coins={coins}, Late={isLate}");
 
         // Move dropoff to a new random spot
         RandomDropoffLocation randomDropoff = GetComponent<RandomDropoffLocation>();
@@ -183,7 +193,6 @@ public class DeliveryPoint : MonoBehaviour
         if (hintText != null)
             hintText.text = "Great! Drive to a pickup icon for your next order.";
     }
-
     private int CalculateReward(float distance, float time, bool isLate)
     {
         if (isLate)

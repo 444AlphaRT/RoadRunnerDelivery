@@ -97,6 +97,7 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        
         if (rb == null) return;
 
         // Fuel is controlled ONLY by FuelManager.

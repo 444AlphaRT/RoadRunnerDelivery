@@ -18,6 +18,9 @@ public class PenaltyManager : MonoBehaviour
     [SerializeField] private PenaltyOverlayUI penaltyUI;
     [SerializeField] private GameOverUI gameOverUI;
 
+    [Header("Notifications")]
+    [SerializeField] private FineNotification fineNotification;
+
     [Header("GAME OVER (total violations)")]
     [SerializeField] private int maxViolationsBeforeGameOver = 3;
 
@@ -40,11 +43,9 @@ public class PenaltyManager : MonoBehaviour
     private Coroutine freezeCoroutine;
     private bool isGameOver = false;
 
-    [Header("Notifications")]
-    [SerializeField] private FineNotification fineNotification;
-
     private void Awake()
     {
+        // Singleton pattern + persist between scenes
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -75,27 +76,33 @@ public class PenaltyManager : MonoBehaviour
 
     private IEnumerator RebindNextFrame()
     {
-        // wait one frame so scene objects are fully created/enabled
+        // Wait one frame so scene objects are fully created/enabled
         yield return null;
 
         RebindSceneReferences();
 
-        // make sure UI is hidden at scene start
+        // Hide UI at scene start
         penaltyUI?.Hide();
         gameOverUI?.Hide();
     }
 
     private void RebindSceneReferences()
     {
-        // include inactive so UI can be found even if root panel is disabled
+        // Include inactive so UI can be found even if root panel is disabled
         player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
         penaltyUI = FindFirstObjectByType<PenaltyOverlayUI>(FindObjectsInactive.Include);
         gameOverUI = FindFirstObjectByType<GameOverUI>(FindObjectsInactive.Include);
+
+        // IMPORTANT: also rebind FineNotification each scene (because PenaltyManager persists)
+        fineNotification = FindFirstObjectByType<FineNotification>(FindObjectsInactive.Include);
     }
 
+    /// <summary>
+    /// Generic ticket for violations. RedLight uses blocking popup, other types use timed popup by default.
+    /// Returns true if paid, false if unpaid (freeze/strikes may happen).
+    /// </summary>
     public bool IssueTicket(ViolationType type, int fineAmount, string reason)
     {
-      
         if (isGameOver) return false;
 
         // Count total violations FIRST (paid or unpaid)
@@ -106,8 +113,8 @@ public class PenaltyManager : MonoBehaviour
             return false;
         }
 
-        // Try to rebind if needed
-        if (player == null || penaltyUI == null || gameOverUI == null)
+        // Rebind if needed
+        if (player == null || penaltyUI == null || gameOverUI == null || fineNotification == null)
             RebindSceneReferences();
 
         if (MoneyManager.Instance == null)
@@ -115,30 +122,30 @@ public class PenaltyManager : MonoBehaviour
             Debug.LogWarning("PenaltyManager: MoneyManager.Instance is NULL (fine cannot be paid).");
             return false;
         }
+
         bool paid = MoneyManager.Instance.TrySpend(fineAmount);
 
-        // Try to pay
+        // If paid -> show notification
         if (paid)
         {
-            // --- התיקון 2: הפעלת ההודעה הנכונה ---
             if (fineNotification != null)
             {
                 if (type == ViolationType.RedLight)
                 {
-                    Debug.Log("TRYING TO STOP GAME NOW!");
-                    // רמזור אדום -> הודעה עוצרת משחק (באנגלית)
-                    fineNotification.ShowRedLightPenalty(fineAmount);
+                    // Blocking popup (pauses until ENTER)
+                    fineNotification.ShowRedLightPenalty(fineAmount, blocking: true);
                 }
                 else
                 {
-                    // עבירה אחרת (מהירות) -> הודעה רגילה
+                    // Default timed popup for non-redlight (speed/late/etc)
                     fineNotification.ShowFine(fineAmount);
                 }
-            }else
-            {
-                Debug.Log("ERROR: FineNotification is missing in Inspector!");
             }
-            // -------------------------------------
+            else
+            {
+                Debug.LogWarning("PenaltyManager: FineNotification is missing in this scene.");
+            }
+
             return true;
         }
 
@@ -150,7 +157,7 @@ public class PenaltyManager : MonoBehaviour
             return false;
         }
 
-        // If player missing, we can't freeze, but we already counted the violation
+        // If player missing, we can't freeze
         if (player == null)
         {
             Debug.LogWarning("PenaltyManager: Player missing, can't freeze.");
@@ -160,6 +167,76 @@ public class PenaltyManager : MonoBehaviour
         float duration = (strikes == 1) ? firstTimeoutSeconds : secondTimeoutSeconds;
 
         // Restart freeze cleanly
+        if (freezeCoroutine != null)
+        {
+            StopCoroutine(freezeCoroutine);
+            freezeCoroutine = null;
+        }
+
+        freezeCoroutine = StartCoroutine(FreezeRoutine(duration, reason, strikes));
+        return false;
+    }
+
+    /// <summary>
+    /// Dedicated API for speed cameras:
+    /// Shows a BLOCKING popup including "overKmh" and requires ENTER (like red light).
+    /// Returns true if paid, false if unpaid (freeze/strikes may happen).
+    /// </summary>
+    public bool IssueSpeedCameraTicket(int fineAmount, int overKmh, string reason = "SPEED CAMERA")
+    {
+        if (isGameOver) return false;
+
+        // Count total violations FIRST
+        violationsTotal++;
+        if (violationsTotal >= maxViolationsBeforeGameOver)
+        {
+            TriggerGameOver("Too many violations.");
+            return false;
+        }
+
+        // Rebind if needed
+        if (player == null || penaltyUI == null || gameOverUI == null || fineNotification == null)
+            RebindSceneReferences();
+
+        if (MoneyManager.Instance == null)
+        {
+            Debug.LogWarning("PenaltyManager: MoneyManager.Instance is NULL (fine cannot be paid).");
+            return false;
+        }
+
+        bool paid = MoneyManager.Instance.TrySpend(fineAmount);
+
+        // If paid -> show BLOCKING speed camera popup
+        if (paid)
+        {
+            if (fineNotification != null)
+            {
+                fineNotification.ShowSpeedCameraFine(fineAmount, overKmh, blocking: true);
+            }
+            else
+            {
+                Debug.LogWarning("PenaltyManager: FineNotification is missing in this scene.");
+            }
+
+            return true;
+        }
+
+        // Unpaid -> strike (Speed)
+        int strikes = IncrementUnpaid(ViolationType.Speed);
+        if (strikes >= maxUnpaidStrikes)
+        {
+            TriggerGameOver("Too many unpaid fines.");
+            return false;
+        }
+
+        if (player == null)
+        {
+            Debug.LogWarning("PenaltyManager: Player missing, can't freeze.");
+            return false;
+        }
+
+        float duration = (strikes == 1) ? firstTimeoutSeconds : secondTimeoutSeconds;
+
         if (freezeCoroutine != null)
         {
             StopCoroutine(freezeCoroutine);

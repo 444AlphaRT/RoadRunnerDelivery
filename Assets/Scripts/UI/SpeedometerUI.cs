@@ -8,67 +8,57 @@ public class SpeedometerUI : MonoBehaviour
     public PlayerController player;
     public TextMeshProUGUI speedText;
 
-    [Header("KM/H Calibration")]
-    [Tooltip("When the player's INITIAL maxSpeed is reached, show this KM/H (e.g. 30).")]
-    public float baselineKmhAtInitialMaxSpeed = 30f;
-
-    [Tooltip("Set this to the player's initial maxSpeed value (units/sec) at the start of the level (e.g. 8).")]
-    public float initialMaxSpeedUnits = 8f;
+    [Header("KM/H Calibration (Display Only)")]
+    [Tooltip("When the player reaches their CURRENT max speed, show this KM/H (e.g. 50).")]
+    public float baselineKmhAtMaxSpeed = 50f;
 
     [Header("Format")]
     public int decimals = 0;
 
     [Header("Color thresholds")]
     [Range(0.5f, 1f)]
-    public float warningPercent = 0.9f;   // Yellow when >= 90% of limit
+    [Tooltip("Yellow when reaching this percentage of the player's current max speed.")]
+    public float warningPercent = 0.9f;
 
-    public bool showLimit = true;
+    [Tooltip("Show \"current speed / max speed\" text.")]
+    public bool showMax = true;
 
     private static readonly CultureInfo culture = CultureInfo.InvariantCulture;
 
-    private float unitsToKmh = 1f;
-
-    private void Awake()
-    {
-        if (initialMaxSpeedUnits <= 0.01f)
-            initialMaxSpeedUnits = 1f;
-
-        // Convert units/sec -> km/h for DISPLAY ONLY
-        unitsToKmh = baselineKmhAtInitialMaxSpeed / initialMaxSpeedUnits;
-    }
-
     private void Update()
     {
-        if (player == null || speedText == null) return;
+        if (player == null || speedText == null)
+            return;
 
-        // Actual physics values (units/sec)
+        // Real speed values from the player (units/sec)
         float speedUnits = player.CurrentSpeed;
-        float limitUnits = player.CurrentSpeedLimit;
 
-        // Display values (km/h)
+        // With no zones, the 'limit' is just the player's current maxSpeed
+        float maxUnits = player.maxSpeed;
+
+        // Prevent division by zero
+        float safeMax = Mathf.Max(maxUnits, 0.01f);
+
+        // Display scaling:
+        // When speedUnits == maxUnits -> display baselineKmhAtMaxSpeed (e.g. 50 km/h)
+        float unitsToKmh = baselineKmhAtMaxSpeed / safeMax;
+
+        // Convert to display km/h
         float speedKmh = speedUnits * unitsToKmh;
-        float limitKmh = limitUnits * unitsToKmh;
+        float maxKmh = maxUnits * unitsToKmh; // equals baselineKmhAtMaxSpeed
 
+        // Format
         string speedStr = speedKmh.ToString("F" + decimals, culture);
-        string limitStr = limitKmh.ToString("F" + decimals, culture);
+        string maxStr = maxKmh.ToString("F" + decimals, culture);
 
-        if (showLimit)
-            speedText.text = $"Speed: {speedStr} / {limitStr} km/h";
+        // Update text
+        if (showMax)
+            speedText.text = $"Speed: {speedStr} / {maxStr} km/h";
         else
             speedText.text = $"Speed: {speedStr} km/h";
 
-        // Color logic based on REAL limit (units)
-        if (limitUnits <= 0.01f)
-        {
-            speedText.color = Color.white;
-            return;
-        }
-
-        if (speedUnits > limitUnits + 0.01f)
-        {
-            speedText.color = Color.red;
-        }
-        else if (speedUnits >= limitUnits * warningPercent)
+        // Color logic based on REAL speed vs REAL max speed
+        if (speedUnits >= maxUnits * warningPercent)
         {
             speedText.color = Color.yellow;
         }

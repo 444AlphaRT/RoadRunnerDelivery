@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
@@ -7,8 +6,8 @@ public class PlayerController : MonoBehaviour
     // Movement
     // =========================
     [Header("Movement Settings")]
-    public float moveSpeed = 5f;   // Not used for instant velocity anymore (kept for compatibility)
-    public float maxSpeed = 8f;    // Absolute maximum speed (units/sec)
+    public float moveSpeed = 5f;   // Kept for compatibility (not used as instant velocity)
+    public float maxSpeed = 8f;    // Absolute maximum speed (units/sec) - upgrades can increase this
 
     [Header("Acceleration")]
     [Tooltip("How fast we accelerate toward the target speed (units/sec^2).")]
@@ -17,11 +16,11 @@ public class PlayerController : MonoBehaviour
     [Tooltip("How fast we decelerate to zero when no input (units/sec^2).")]
     public float deceleration = 16f;
 
-    [Tooltip("Global multiplier to reduce acceleration (we'll use 0.5 to divide by 2).")]
-    public float accelerationMultiplier = 0.5f; // <-- divide acceleration by 2
+    [Tooltip("Global multiplier to reduce acceleration (e.g. 0.5 means half acceleration).")]
+    public float accelerationMultiplier = 0.5f;
 
-    [Tooltip("Extra reduction when turning (diagonal input). 0.5 means half the acceleration again.")]
-    public float turningAccelerationMultiplier = 0.5f; // <-- even slower while turning
+    [Tooltip("Extra reduction when turning diagonally. 0.5 means half acceleration again while turning.")]
+    public float turningAccelerationMultiplier = 0.5f;
 
     [Header("Rotation (Motorcycle)")]
     [Tooltip("If your sprite faces UP by default, keep this at -90. If it faces RIGHT, set it to 0.")]
@@ -53,12 +52,6 @@ public class PlayerController : MonoBehaviour
     [Header("Fuel (Driven by FuelManager)")]
     [Tooltip("Read-only style flag: this is updated from FuelManager.CurrentFuel. Do NOT set it manually.")]
     public bool outOfFuel = false;
-
-    // =========================
-    // Speed Zone System (supports overlapping zones)
-    // =========================
-    private readonly Dictionary<object, float> activeSpeedLimits = new();
-    private float? cachedSpeedLimit = null; // Cached minimum speed limit from all active zones
 
     // =========================
     // Internal State
@@ -97,7 +90,6 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        
         if (rb == null) return;
 
         // Fuel is controlled ONLY by FuelManager.
@@ -113,26 +105,21 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // Determine current max speed (speed zones override global maxSpeed)
-        float currentMaxSpeed = cachedSpeedLimit.HasValue
-            ? Mathf.Min(maxSpeed, cachedSpeedLimit.Value)
-            : maxSpeed;
+        // Upgrades control maxSpeed (NO zone clamping)
+        float currentMaxSpeed = maxSpeed;
 
         // Target velocity based on input and max speed
         Vector2 targetVelocity = inputDirection * currentMaxSpeed;
 
-        // Detect if the player is currently "turning" (diagonal movement)
-        // If both axes are pressed, we reduce acceleration more.
+        // Detect diagonal movement (turning)
         bool isTurning = Mathf.Abs(inputDirection.x) > 0.001f && Mathf.Abs(inputDirection.y) > 0.001f;
 
         // Acceleration / deceleration rate
         float rate;
         if (inputDirection.sqrMagnitude > 0.001f)
         {
-            // Base acceleration reduced by 2 (multiplier 0.5)
             float effectiveAccel = acceleration * accelerationMultiplier;
 
-            // If turning (diagonal), reduce even more
             if (isTurning)
                 effectiveAccel *= turningAccelerationMultiplier;
 
@@ -140,7 +127,6 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            // Keep deceleration strong (feels like braking)
             rate = deceleration;
         }
 
@@ -156,42 +142,6 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========================
-    // Speed Zone API (legacy system)
-    // =========================
-    public void AddSpeedLimit(object source, float limit)
-    {
-        if (source == null) return;
-
-        activeSpeedLimits[source] = limit;
-        RecalculateSpeedLimit();
-    }
-
-    public void RemoveSpeedLimit(object source)
-    {
-        if (source == null) return;
-
-        if (activeSpeedLimits.Remove(source))
-            RecalculateSpeedLimit();
-    }
-
-    private void RecalculateSpeedLimit()
-    {
-        if (activeSpeedLimits.Count == 0)
-        {
-            cachedSpeedLimit = null;
-            return;
-        }
-
-        float min = float.MaxValue;
-        foreach (float limit in activeSpeedLimits.Values)
-        {
-            if (limit < min) min = limit;
-        }
-
-        cachedSpeedLimit = min;
-    }
-
-    // =========================
     // Speedometer Accessors (UI)
     // =========================
     public float CurrentSpeed
@@ -199,12 +149,8 @@ public class PlayerController : MonoBehaviour
         get => rb == null ? 0f : rb.linearVelocity.magnitude;
     }
 
-    public float CurrentSpeedLimit
-    {
-        get => cachedSpeedLimit.HasValue
-            ? Mathf.Min(maxSpeed, cachedSpeedLimit.Value)
-            : maxSpeed;
-    }
+    // No zones anymore -> limit is the player's current maxSpeed
+    public float CurrentSpeedLimit => maxSpeed;
 
     // =========================
     // Delivery Logic (multi-package)

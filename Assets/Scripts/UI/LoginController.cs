@@ -18,6 +18,10 @@ public class LoginController : MonoBehaviour
     [Header("Auth")]
     [SerializeField] private string fixedPassword = "RoadRunner#2026";
 
+    // Optional: prefix for guest profiles (keeps guest sessions separate)
+    [Header("Guest")]
+    [SerializeField] private string guestProfilePrefix = "guest_";
+
     private bool busy = false;
 
     private async void Start()
@@ -28,6 +32,9 @@ public class LoginController : MonoBehaviour
             statusText.text = "";
     }
 
+    // =========================
+    // Register
+    // =========================
     public async void OnClickRegister()
     {
         if (busy) return;
@@ -38,6 +45,7 @@ public class LoginController : MonoBehaviour
             string username = ValidateUsername();
             if (username == null) return;
 
+            // Ensure we're starting clean and using a profile per username
             AuthenticationService.Instance.SignOut(true);
             AuthenticationService.Instance.SwitchProfile(username);
 
@@ -64,6 +72,9 @@ public class LoginController : MonoBehaviour
         }
     }
 
+    // =========================
+    // Login
+    // =========================
     public async void OnClickLogin()
     {
         if (busy) return;
@@ -100,8 +111,54 @@ public class LoginController : MonoBehaviour
         }
     }
 
+    // =========================
+    // Guest Login (Anonymous)
+    // =========================
+    public async void OnClickGuest()
+    {
+        if (busy) return;
+        busy = true;
+
+        try
+        {
+            // We create a unique profile name for a guest session.
+            // Using a profile helps keep different guest sessions separate on the same device.
+            string guestProfile = guestProfilePrefix + Guid.NewGuid().ToString("N");
+
+            // Start clean (optional but recommended to avoid mixing accounts)
+            AuthenticationService.Instance.SignOut(true);
+            AuthenticationService.Instance.SwitchProfile(guestProfile);
+
+            SetStatus("Entering as guest...");
+
+            // Anonymous sign-in creates an account without username/password.
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+
+            SetStatus("Guest login success!");
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
+        catch (Exception e)
+        {
+            SetStatus("Guest login failed");
+            Debug.LogException(e);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    // =========================
+    // Helpers
+    // =========================
     private string ValidateUsername()
     {
+        if (usernameInput == null)
+        {
+            SetStatus("Username input missing");
+            return null;
+        }
+
         string username = usernameInput.text.Trim();
 
         if (string.IsNullOrWhiteSpace(username))
@@ -110,6 +167,7 @@ public class LoginController : MonoBehaviour
             return null;
         }
 
+        // 3-20 chars, allow letters, numbers, dot, underscore, dash, @
         if (!Regex.IsMatch(username, @"^[A-Za-z0-9._\-@]{3,20}$"))
         {
             SetStatus("Invalid username");

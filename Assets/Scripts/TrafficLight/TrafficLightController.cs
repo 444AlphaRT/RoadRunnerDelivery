@@ -1,7 +1,15 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(EdgeCollider2D))]
+/// <summary>
+/// Controls the traffic light visuals (green/red) and issues a fine
+/// when the player crosses the STOP LINE during RED.
+///
+/// IMPORTANT:
+/// - The STOP LINE collider is NOT on the traffic light object.
+/// - The stop line is a separate GameObject with an EdgeCollider2D (Is Trigger).
+/// - This controller listens to a helper script (StopLineTrigger) on that stop line.
+/// </summary>
 public class TrafficLightController : MonoBehaviour
 {
     [Header("Timing")]
@@ -10,7 +18,6 @@ public class TrafficLightController : MonoBehaviour
 
     [Header("Fines (local escalation)")]
     [SerializeField] private int baseRedFine = 3;
-
     [SerializeField] private float fineMultiplierPerViolation = 1.5f;
     [SerializeField] private int maxFineCap = 0;
 
@@ -21,18 +28,39 @@ public class TrafficLightController : MonoBehaviour
     [SerializeField] private Sprite greenSprite;
     [SerializeField] private Sprite redSprite;
 
+    [Header("Stop Line Reference")]
+    [Tooltip("Drag the StopLine GameObject here (the one that has EdgeCollider2D + StopLineTrigger).")]
+    [SerializeField] private StopLineTrigger stopLine;
+
     private bool isGreen = true;
     private int redViolationsLocal = 0;
 
     private SpriteRenderer sr;
-    private EdgeCollider2D edge;
 
     private void Awake()
     {
         sr = GetComponent<SpriteRenderer>();
 
-        edge = GetComponent<EdgeCollider2D>();
-        edge.isTrigger = true;
+        // Auto-find in children/parent if not assigned (optional safety)
+        if (stopLine == null)
+            stopLine = GetComponentInChildren<StopLineTrigger>();
+
+        if (stopLine == null)
+            Debug.LogError("TrafficLightController: StopLineTrigger reference is missing! Drag it in Inspector.");
+    }
+
+    private void OnEnable()
+    {
+        // Subscribe to stop line trigger events
+        if (stopLine != null)
+            stopLine.PlayerCrossed += OnPlayerCrossedStopLine;
+    }
+
+    private void OnDisable()
+    {
+        // Unsubscribe to avoid memory leaks / double subscriptions
+        if (stopLine != null)
+            stopLine.PlayerCrossed -= OnPlayerCrossedStopLine;
     }
 
     private void Start()
@@ -58,15 +86,22 @@ public class TrafficLightController : MonoBehaviour
     private void UpdateVisual()
     {
         if (sr == null) return;
-
         sr.sprite = isGreen ? greenSprite : redSprite;
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    /// <summary>
+    /// Called when the player crosses the stop line trigger.
+    /// We fine only if it's currently RED and player speed is above threshold.
+    /// </summary>
+    private void OnPlayerCrossedStopLine(Collider2D other)
     {
+        if (other == null) return;
+
+        // Only care about the player
         if (!other.CompareTag("Player"))
             return;
 
+        // If green, no violation
         if (isGreen)
             return;
 
@@ -96,23 +131,10 @@ public class TrafficLightController : MonoBehaviour
             fine,
             "RED LIGHT"
         );
-        if (paid)
+
+        if (paid && AlertUI.Instance != null)
         {
             AlertUI.Instance.Show("RED LIGHT! - Money deducted");
-        }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        EdgeCollider2D e = GetComponent<EdgeCollider2D>();
-        if (e == null || e.points.Length < 2) return;
-
-        Gizmos.color = Color.red;
-        for (int i = 0; i < e.points.Length - 1; i++)
-        {
-            Vector3 a = transform.TransformPoint(e.points[i]);
-            Vector3 b = transform.TransformPoint(e.points[i + 1]);
-            Gizmos.DrawLine(a, b);
         }
     }
 }

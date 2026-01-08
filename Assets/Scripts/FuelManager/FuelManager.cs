@@ -31,6 +31,13 @@ public class FuelManager : MonoBehaviour
     [Tooltip("How many frames to retry finding the FuelText after a scene loads.")]
     [SerializeField] private int rebindRetryFrames = 10;
 
+    [Header("Refuel Feedback (UI)")]
+    [Tooltip("Optional: show a notification when refueling succeeds/fails.")]
+    [SerializeField] private FineNotification fineNotification;
+
+    [Tooltip("Message display duration for refuel feedback.")]
+    [SerializeField] private float refuelMessageSeconds = 1.5f;
+
     public int CurrentFuel { get; private set; }
 
     private int deliveriesSinceLastFuelDrop = 0;
@@ -105,6 +112,10 @@ public class FuelManager : MonoBehaviour
 
         resetOnSceneEnter = src.resetOnSceneEnter;
         rebindRetryFrames = src.rebindRetryFrames;
+
+        // Copy feedback settings too
+        fineNotification = src.fineNotification;
+        refuelMessageSeconds = src.refuelMessageSeconds;
     }
 
     private void StartRebindRetries()
@@ -123,6 +134,7 @@ public class FuelManager : MonoBehaviour
         for (int i = 0; i < Mathf.Max(1, rebindRetryFrames); i++)
         {
             RebindFuelUI();
+            RebindRefuelNotification();
 
             if (fuelText != null)
             {
@@ -155,15 +167,13 @@ public class FuelManager : MonoBehaviour
 
         if (go != null)
         {
-            // IMPORTANT FIX: only accept it if it actually has a TMP component
+            // Only accept it if it actually has a TMP component
             var tmp = go.GetComponent<TextMeshProUGUI>();
             if (tmp != null)
             {
                 fuelText = tmp;
                 return;
             }
-            // If the tagged object is NOT a TMP text (e.g. someone tagged FuelManager by mistake),
-            // continue to fallback instead of returning with fuelText = null.
         }
 
         // 2) Fallback: find TMP texts including inactive, prefer matching tag
@@ -176,10 +186,16 @@ public class FuelManager : MonoBehaviour
                 return;
             }
         }
+    }
 
-        // 3) If still not found, keep previous reference if it exists
-        // (do not force null unless you really want that behavior)
-        // fuelText = null;
+    /// <summary>
+    /// Finds FineNotification in the currently loaded scene (because FuelManager persists).
+    /// Safe even if you don't use it.
+    /// </summary>
+    private void RebindRefuelNotification()
+    {
+        if (fineNotification != null) return;
+        fineNotification = FindFirstObjectByType<FineNotification>(FindObjectsInactive.Include);
     }
 
     public void RegisterDeliveryCompleted()
@@ -221,25 +237,56 @@ public class FuelManager : MonoBehaviour
         UpdateFuelText();
     }
 
+    /// <summary>
+    /// Refuel attempt:
+    /// - If not enough money -> show feedback
+    /// - If tank is full -> show feedback
+    /// - On success -> add fuel + show "Refueled!" message
+    /// </summary>
     public void TryRefuel()
     {
+        RebindRefuelNotification();
+
         if (MoneyManager.Instance == null)
         {
             Debug.LogWarning("FuelManager: MoneyManager.Instance is NULL!");
+            ShowRefuelFeedback("Refuel failed (no money system)", Color.red);
             return;
         }
 
         if (CurrentFuel >= maxFuel)
+        {
+            ShowRefuelFeedback("Tank is already full", Color.yellow);
             return;
+        }
 
         bool paid = MoneyManager.Instance.TrySpend(refuelCostCoins);
         if (!paid)
         {
-            Debug.Log("FuelManager: Not enough money to refuel.");
+            ShowRefuelFeedback("Not enough coins to refuel", Color.red);
             return;
         }
 
+        int before = CurrentFuel;
         AddFuel(refuelUnitsAmount);
+        int gained = Mathf.Max(0, CurrentFuel - before);
+
+        ShowRefuelFeedback($"+{gained} Fuel (Paid {refuelCostCoins})", Color.green);
+    }
+
+    private void ShowRefuelFeedback(string msg, Color color)
+    {
+        // If you have FineNotification in the scene, use it.
+        // Otherwise just log (so it never breaks gameplay).
+        if (fineNotification != null)
+        {
+            // Use the generic timed message API (no pause)
+            fineNotification.ShowTimedMessage(msg, color, refuelMessageSeconds);
+        }
+        else
+        {
+            Debug.Log($"Refuel: {msg}");
+        }
     }
 
     public void ResetToDefaults()

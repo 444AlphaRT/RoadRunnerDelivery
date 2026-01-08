@@ -27,11 +27,13 @@ public class FineNotification : MonoBehaviour
     private System.Action onDismiss;
 
     private Canvas parentCanvas;
+    private float previousTimeScale = 1f;
 
     private void Awake()
     {
         if (notificationText != null)
         {
+            notificationText.text = "";
             notificationText.gameObject.SetActive(false);
             parentCanvas = notificationText.GetComponentInParent<Canvas>();
         }
@@ -72,9 +74,6 @@ public class FineNotification : MonoBehaviour
         ShowTimedMessage($"-{amount} Coins!", Color.yellow, displayDuration);
     }
 
-    /// <summary>
-    /// Speed camera popup. If blocking=true -> pauses game and requires ENTER.
-    /// </summary>
     public void ShowSpeedCameraFine(int fineAmount, int overKmh, bool blocking = false)
     {
         string msg =
@@ -114,13 +113,13 @@ public class FineNotification : MonoBehaviour
 
     /// <summary>
     /// Generic timed message (NO pause).
-    /// If the game is currently paused (timeScale==0), we automatically fallback to blocking message.
+    /// If the game is currently paused (timeScale == 0),
+    /// fallback to blocking message so it is visible and understandable.
     /// </summary>
     public void ShowTimedMessage(string message, Color color, float seconds)
     {
         if (notificationText == null) return;
 
-        // If game is paused, timed popups can be confusing; fallback to blocking.
         if (Time.timeScale == 0f)
         {
             ShowBlockingMessage(message + "\nPress ENTER to continue", color);
@@ -136,7 +135,7 @@ public class FineNotification : MonoBehaviour
     }
 
     /// <summary>
-    /// Blocking message (pause until Enter).
+    /// Blocking message (pause until ENTER).
     /// </summary>
     public void ShowBlockingMessage(string message, Color color, System.Action onDismissAction = null)
     {
@@ -149,7 +148,10 @@ public class FineNotification : MonoBehaviour
         onDismiss = onDismissAction;
 
         if (pauseGameOnBlockingMessages)
+        {
+            previousTimeScale = Time.timeScale;
             Time.timeScale = 0f;
+        }
 
         isWaitingForInput = true;
     }
@@ -158,10 +160,6 @@ public class FineNotification : MonoBehaviour
     // Internal helpers
     // =========================
 
-    /// <summary>
-    /// Wraps the message with TMP <mark> to create a background highlight.
-    /// Requires: NotificationText (TextMeshProUGUI) -> Rich Text enabled in Inspector.
-    /// </summary>
     private string WithBackground(string message)
     {
         string hex = ColorUtility.ToHtmlStringRGBA(backgroundColor);
@@ -170,21 +168,16 @@ public class FineNotification : MonoBehaviour
 
     private void ApplyText(string message, Color color)
     {
-        // Add background behind text (no extra panel / image needed)
         notificationText.text = WithBackground(message);
         notificationText.color = color;
 
-        // Ensure it is visible
         notificationText.gameObject.SetActive(true);
 
-        // Bring to front so it can't be hidden behind other UI panels
         if (bringToFront)
             notificationText.transform.SetAsLastSibling();
 
-        // Force UI refresh this frame
         Canvas.ForceUpdateCanvases();
 
-        // Extra safety: if the parent canvas exists, enable it
         if (parentCanvas != null && !parentCanvas.enabled)
             parentCanvas.enabled = true;
     }
@@ -192,22 +185,27 @@ public class FineNotification : MonoBehaviour
     private IEnumerator HideAfterSeconds(float seconds)
     {
         yield return new WaitForSecondsRealtime(seconds);
-
-        if (notificationText != null)
-            notificationText.gameObject.SetActive(false);
+        HideAndClear();
     }
 
     private void ResumeGameAndHide()
     {
         if (pauseGameOnBlockingMessages)
-            Time.timeScale = 1f;
+            Time.timeScale = previousTimeScale;
 
         isWaitingForInput = false;
 
-        if (notificationText != null)
-            notificationText.gameObject.SetActive(false);
+        HideAndClear();
 
         onDismiss?.Invoke();
         onDismiss = null;
+    }
+
+    private void HideAndClear()
+    {
+        if (notificationText == null) return;
+
+        notificationText.text = "";          // IMPORTANT: clear old <mark> + text
+        notificationText.gameObject.SetActive(false);
     }
 }

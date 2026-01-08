@@ -1937,6 +1937,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FineNotification
   notificationText: {fileID: 1015460334}
   displayDuration: 2
+  pauseGameOnBlockingMessages: 1
+  bringToFront: 1
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0.65}
 --- !u!114 &230492660
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2087,12 +2090,12 @@ MonoBehaviour:
   player: {fileID: 666474422}
   penaltyUI: {fileID: 1941187528}
   gameOverUI: {fileID: 1510687147}
+  fineNotification: {fileID: 230492659}
   maxViolationsBeforeGameOver: 5
   firstTimeoutSeconds: 5
   secondTimeoutSeconds: 10
   maxUnpaidStrikes: 3
   uiTickSeconds: 1
-  fineNotification: {fileID: 230492659}
 --- !u!4 &243969979
 Transform:
   m_ObjectHideFlags: 0
@@ -6974,6 +6977,8 @@ MonoBehaviour:
   refuelCostCoins: 5
   resetOnSceneEnter: 1
   rebindRetryFrames: 10
+  fineNotification: {fileID: 0}
+  refuelMessageSeconds: 1.5
 --- !u!4 &984724637
 Transform:
   m_ObjectHideFlags: 0
@@ -11529,10 +11534,10 @@ RectTransform:
   - {fileID: 263950209}
   m_Father: {fileID: 1346841602}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 830, y: 416}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1772922530
 MonoBehaviour:

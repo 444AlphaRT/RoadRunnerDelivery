@@ -40,12 +40,6 @@ public class OpeningSequence : MonoBehaviour
             return;
         }
 
-        // --- מכאן זה הקוד הרגיל (אם לא דילגנו) ---
-
-        // הקפאת השחקן
-        if (player != null)
-            player.canMove = false;
-
         // הצגת מסך הפתיחה
         if (introPanel != null)
             introPanel.SetActive(true);

@@ -79,6 +79,7 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log("Time.timeScale = " + Time.timeScale);
         // Restore position after a scene load (if a previous scene saved the player's position).
         TryRestorePositionFromRunContext();
     }
@@ -100,6 +101,8 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        Debug.Log("canMove = " + canMove);
+
         if (rb == null) return;
 
         // Fuel is controlled ONLY by FuelManager.

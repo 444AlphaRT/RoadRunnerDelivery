@@ -3034,6 +3034,7 @@ MonoBehaviour:
   displayDuration: 2
   pauseGameOnBlockingMessages: 1
   bringToFront: 1
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0.65}
 --- !u!4 &369909656
 Transform:
   m_ObjectHideFlags: 0
@@ -8021,6 +8022,8 @@ MonoBehaviour:
   refuelCostCoins: 5
   resetOnSceneEnter: 1
   rebindRetryFrames: 10
+  fineNotification: {fileID: 0}
+  refuelMessageSeconds: 1.5
 --- !u!4 &984724637
 Transform:
   m_ObjectHideFlags: 0
@@ -9933,6 +9936,11 @@ MonoBehaviour:
   - {fileID: 1234018440}
   - {fileID: 1141686000}
   managedExternally: 0
+  blockedLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  checkRadius: 0.35
+  maxAttempts: 30
 --- !u!1 &1123661441
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,9 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Player movement + delivery logic.
+/// Also restores player position after scene loads (if RunContext saved it).
+/// </summary>
 public class PlayerController : MonoBehaviour
 {
     // =========================
@@ -73,6 +77,12 @@ public class PlayerController : MonoBehaviour
         HasPackage = packagesHeld > 0;
     }
 
+    private void Start()
+    {
+        // Restore position after a scene load (if a previous scene saved the player's position).
+        TryRestorePositionFromRunContext();
+    }
+
     private void Update()
     {
         // Read raw input (no smoothing)
@@ -140,6 +150,28 @@ public class PlayerController : MonoBehaviour
             rb.rotation = angle + spriteAngleOffset;
         }
     }
+
+    // =========================
+    // Position persistence (scene-to-scene)
+    // =========================
+    private void TryRestorePositionFromRunContext()
+    {
+        if (RunContext.Instance == null) return;
+
+        // If the previous scene saved a position, apply it once.
+        if (RunContext.Instance.HasSavedPlayerPosition)
+        {
+            transform.position = RunContext.Instance.SavedPlayerPosition;
+
+            // Optional: clear so it won't re-apply again in later scene loads
+            RunContext.Instance.ClearPlayerPosition();
+        }
+    }
+
+    /// <summary>
+    /// Call this before loading the next scene if you want to preserve position.
+    /// Example usage: RunContext.Instance.SavePlayerPosition(player.transform.position);
+    /// </summary>
 
     // =========================
     // Speedometer Accessors (UI)

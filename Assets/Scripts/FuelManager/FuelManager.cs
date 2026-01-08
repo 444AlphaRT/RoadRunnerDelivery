@@ -23,8 +23,8 @@ public class FuelManager : MonoBehaviour
     [SerializeField] private int refuelUnitsAmount = 5;
     [SerializeField] private int refuelCostCoins = 5;
 
-    [Header("Reset Policy")]
-    [Tooltip("If true, entering a scene with a FuelManager will reset fuel to startingFuel.")]
+    [Header("Reset Policy (fallback only)")]
+    [Tooltip("Used ONLY if RunContext doesn't provide a fuel policy for this scene load.")]
     [SerializeField] private bool resetOnSceneEnter = true;
 
     [Header("WebGL/Build Robustness")]
@@ -51,9 +51,8 @@ public class FuelManager : MonoBehaviour
         {
             Instance.ApplyInspectorConfigFrom(this);
 
-            // IMPORTANT: reset decision should come from THIS scene's FuelManager
-            if (this.resetOnSceneEnter)
-                Instance.ResetToDefaults();
+            // IMPORTANT: do NOT reset here anymore.
+            // Reset/keep/preset decisions happen ONLY inside OnSceneLoaded using RunContext.
 
             // Rebind UI for the new scene (WebGL safe)
             Instance.StartRebindRetries();
@@ -70,6 +69,7 @@ public class FuelManager : MonoBehaviour
 
     private void Start()
     {
+        // Initial start: set defaults, then bind UI
         ResetToDefaults();
         StartRebindRetries();
     }
@@ -84,18 +84,40 @@ public class FuelManager : MonoBehaviour
     {
         StartRebindRetries();
 
-        if (RunContext.Instance != null && RunContext.Instance.ConsumeFuelResetFlag())
+        // =========================================================
+        // 1) RunContext decides fuel behavior if it exists.
+        //    This enables:
+        //    - KeepCurrent fuel
+        //    - ResetToDefault fuel
+        //    - SetToPreset fuel for a specific stage
+        // =========================================================
+        if (RunContext.Instance != null &&
+            RunContext.Instance.ConsumeFuelPolicy(out RunContext.FuelPolicy policy, out int presetFuel))
         {
-            ResetToDefaults();
+            switch (policy)
+            {
+                case RunContext.FuelPolicy.KeepCurrent:
+                    // Keep CurrentFuel as-is
+                    UpdateFuelText();
+                    return;
+
+                case RunContext.FuelPolicy.ResetToDefault:
+                    ResetToDefaults();
+                    return;
+
+                case RunContext.FuelPolicy.SetToPreset:
+                    SetFuel(presetFuel);
+                    return;
+            }
         }
-        else if (resetOnSceneEnter)
-        {
+
+        // =========================================================
+        // 2) Fallback behavior if RunContext didn't provide any policy:
+        // =========================================================
+        if (resetOnSceneEnter)
             ResetToDefaults();
-        }
         else
-        {
             UpdateFuelText();
-        }
     }
 
     private void ApplyInspectorConfigFrom(FuelManager src)
@@ -194,6 +216,8 @@ public class FuelManager : MonoBehaviour
     /// </summary>
     private void RebindRefuelNotification()
     {
+        // If you want this to update every scene (even if it was set before),
+        // you can remove the "if (fineNotification != null) return;" line.
         if (fineNotification != null) return;
         fineNotification = FindFirstObjectByType<FineNotification>(FindObjectsInactive.Include);
     }
@@ -241,7 +265,7 @@ public class FuelManager : MonoBehaviour
     /// Refuel attempt:
     /// - If not enough money -> show feedback
     /// - If tank is full -> show feedback
-    /// - On success -> add fuel + show "Refueled!" message
+    /// - On success -> add fuel + show message
     /// </summary>
     public void TryRefuel()
     {
@@ -276,11 +300,8 @@ public class FuelManager : MonoBehaviour
 
     private void ShowRefuelFeedback(string msg, Color color)
     {
-        // If you have FineNotification in the scene, use it.
-        // Otherwise just log (so it never breaks gameplay).
         if (fineNotification != null)
         {
-            // Use the generic timed message API (no pause)
             fineNotification.ShowTimedMessage(msg, color, refuelMessageSeconds);
         }
         else

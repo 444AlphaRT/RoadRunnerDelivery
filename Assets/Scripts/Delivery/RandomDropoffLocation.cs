@@ -9,14 +9,21 @@ public class RandomDropoffLocation : MonoBehaviour
     [Tooltip("If true, this dropoff will NOT move itself on Start(). A manager/script must control it.")]
     [SerializeField] private bool managedExternally = false;
 
+    [Header("Collision Safety")]
+    [Tooltip("Which layers are considered 'blocked' (buildings / walls / sidewalks colliders).")]
+    [SerializeField] private LayerMask blockedLayers;
+
+    [Tooltip("Radius used to test if the dropoff point is inside/overlapping a blocked collider.")]
+    [SerializeField] private float checkRadius = 0.35f;
+
+    [Tooltip("How many random tries before falling back to scanning all spots.")]
+    [SerializeField] private int maxAttempts = 30;
+
     private int lastIndex = -1;
 
     private void Start()
     {
-        // If another system controls this dropoff (e.g., DeliveryPoint / Stage 3),
-        // do NOT auto-randomize here.
         if (managedExternally) return;
-
         MoveToRandomSpot();
     }
 
@@ -28,8 +35,12 @@ public class RandomDropoffLocation : MonoBehaviour
             return;
         }
 
-        int index = ChooseRandomIndex();
-        if (index < 0) return;
+        int index = ChooseRandomValidIndex();
+        if (index < 0)
+        {
+            Debug.LogWarning("RandomDropoffLocation: No VALID dropoff spot found (all are blocked).");
+            return;
+        }
 
         transform.position = dropoffSpots[index].position;
 
@@ -37,36 +48,68 @@ public class RandomDropoffLocation : MonoBehaviour
         Physics2D.SyncTransforms();
     }
 
-    private int ChooseRandomIndex()
-    {
-        if (dropoffSpots.Length == 1)
-        {
-            if (dropoffSpots[0] == null) return -1;
-            return 0;
-        }
+    // =========================
+    // Validity checks
+    // =========================
 
-        const int maxAttempts = 25;
-        for (int attempt = 0; attempt < maxAttempts; attempt++)
+    /// <summary>
+    /// Returns true if the given position does NOT overlap blocked colliders.
+    /// Uses OverlapCircle to detect if we are inside a building collider.
+    /// </summary>
+    private bool IsSpotValid(Vector2 pos)
+    {
+        // If blockedLayers not set, treat all spots as valid (fail-safe)
+        if (blockedLayers.value == 0)
+            return true;
+
+        Collider2D hit = Physics2D.OverlapCircle(pos, checkRadius, blockedLayers);
+        return hit == null;
+    }
+
+    private int ChooseRandomValidIndex()
+    {
+        // Try random picks first
+        for (int attempt = 0; attempt < Mathf.Max(1, maxAttempts); attempt++)
         {
             int idx = Random.Range(0, dropoffSpots.Length);
 
             if (dropoffSpots[idx] == null) continue;
             if (idx == lastIndex) continue;
 
+            Vector2 pos = dropoffSpots[idx].position;
+            if (!IsSpotValid(pos)) continue;
+
             lastIndex = idx;
             return idx;
         }
 
-        // Fallback: first valid spot
+        // Fallback: scan all spots and take the first valid one
         for (int i = 0; i < dropoffSpots.Length; i++)
         {
-            if (dropoffSpots[i] != null)
-            {
-                lastIndex = i;
-                return i;
-            }
+            if (dropoffSpots[i] == null) continue;
+
+            Vector2 pos = dropoffSpots[i].position;
+            if (!IsSpotValid(pos)) continue;
+
+            lastIndex = i;
+            return i;
         }
 
         return -1;
+    }
+
+    // =========================
+    // Debug Gizmos (optional)
+    // =========================
+    private void OnDrawGizmosSelected()
+    {
+        if (dropoffSpots == null) return;
+
+        Gizmos.color = Color.yellow;
+        foreach (var t in dropoffSpots)
+        {
+            if (t == null) continue;
+            Gizmos.DrawWireSphere(t.position, checkRadius);
+        }
     }
 }

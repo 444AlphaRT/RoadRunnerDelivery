@@ -338,7 +338,7 @@ MonoBehaviour:
   statusText: {fileID: 0}
   mainMenuSceneName: MainManu
   fixedPassword: RoadRunner#2026
-  guestProfilePrefix: guest_
+  guestProfilePrefix: guest123
 --- !u!4 &264085409
 Transform:
   m_ObjectHideFlags: 0

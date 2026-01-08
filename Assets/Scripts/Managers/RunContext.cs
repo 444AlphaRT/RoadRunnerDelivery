@@ -1,12 +1,55 @@
 using UnityEngine;
 
+/// <summary>
+/// RunContext is a persistent runtime state holder.
+/// It survives scene loads and tells managers what to do on the NEXT scene load:
+/// - Fuel behavior (keep / reset / preset)
+/// - Money reset or keep
+/// - Player position persistence between scenes
+/// 
+/// IMPORTANT:
+/// - All flags/policies are CONSUMED once on scene load.
+/// - Managers should read them in OnSceneLoaded and then forget them.
+/// </summary>
 public class RunContext : MonoBehaviour
 {
     public static RunContext Instance { get; private set; }
 
-    // If true -> the manager should reset on the NEXT scene load (consumed once).
+    // =========================================================
+    // MONEY POLICY
+    // =========================================================
+
+    // If true -> MoneyManager should reset money on the NEXT scene load.
     private bool resetMoneyOnNextScene = false;
-    private bool resetFuelOnNextScene = false;
+
+    // =========================================================
+    // FUEL POLICY
+    // =========================================================
+
+    public enum FuelPolicy
+    {
+        None,              // No instruction (FuelManager fallback behavior)
+        KeepCurrent,       // Keep current fuel value
+        ResetToDefault,    // Reset fuel to startingFuel
+        SetToPreset        // Set fuel to a specific preset value
+    }
+
+    private FuelPolicy fuelPolicyNextScene = FuelPolicy.None;
+    private int presetFuelNextScene = -1;
+
+    // =========================================================
+    // PLAYER POSITION PERSISTENCE
+    // =========================================================
+
+    // Saved player world position between scenes
+    public Vector3 SavedPlayerPosition { get; private set; }
+
+    // True if a valid position was saved and should be restored once
+    public bool HasSavedPlayerPosition { get; private set; } = false;
+
+    // =========================================================
+    // UNITY LIFECYCLE
+    // =========================================================
 
     private void Awake()
     {
@@ -22,40 +65,102 @@ public class RunContext : MonoBehaviour
     }
 
     // =========================================================
-    // Run control (what you call from UI / progression scripts)
+    // CALLED FROM UI / GAME FLOW (BEFORE LOADING A SCENE)
     // =========================================================
 
     /// <summary>
-    /// Call when starting a NEW run from stage select / main menu.
-    /// This means money and fuel should reset to their starting values.
+    /// Start a completely new run from the beginning.
+    /// - Money resets
+    /// - Fuel resets to default
+    /// - Player position is NOT restored
     /// </summary>
-    public void StartNewRun()
+    public void StartNewRunResetFuel()
     {
         resetMoneyOnNextScene = true;
-        resetFuelOnNextScene = true;
+
+        fuelPolicyNextScene = FuelPolicy.ResetToDefault;
+        presetFuelNextScene = -1;
+
+        ClearPlayerPosition();
     }
 
     /// <summary>
-    /// Call when advancing automatically to the next stage.
-    /// This means money and fuel should be preserved.
+    /// Start from the beginning but KEEP current fuel.
+    /// Useful if you want to restart the map but not punish fuel.
+    /// </summary>
+    public void StartFromBeginningKeepFuel()
+    {
+        resetMoneyOnNextScene = true;
+
+        fuelPolicyNextScene = FuelPolicy.KeepCurrent;
+        presetFuelNextScene = -1;
+
+        ClearPlayerPosition();
+    }
+
+    /// <summary>
+    /// Selecting a specific stage from the menu.
+    /// Fuel will be set to a preset value you choose.
+    /// </summary>
+    public void StartStageWithPresetFuel(int fuelAmount, bool resetMoney)
+    {
+        resetMoneyOnNextScene = resetMoney;
+
+        fuelPolicyNextScene = FuelPolicy.SetToPreset;
+        presetFuelNextScene = fuelAmount;
+
+        ClearPlayerPosition();
+    }
+
+    /// <summary>
+    /// Automatic progression to the next stage.
+    /// - Money is kept
+    /// - Fuel is kept
+    /// - Player position SHOULD be restored
     /// </summary>
     public void ContinueRun()
     {
         resetMoneyOnNextScene = false;
-        resetFuelOnNextScene = false;
+
+        fuelPolicyNextScene = FuelPolicy.KeepCurrent;
+        presetFuelNextScene = -1;
+        // Player position is expected to be saved externally before scene load
     }
 
     /// <summary>
-    /// Optional helper for debugging or "hard restart".
+    /// Optional helper for debugging or hard reset.
     /// </summary>
     public void ResetAllFlags()
     {
         resetMoneyOnNextScene = false;
-        resetFuelOnNextScene = false;
+        fuelPolicyNextScene = FuelPolicy.None;
+        presetFuelNextScene = -1;
+        ClearPlayerPosition();
     }
 
     // =========================================================
-    // Consumed by MoneyManager / FuelManager (one-time flags)
+    // PLAYER POSITION API
+    // =========================================================
+
+    /// <summary>
+    /// Save the player's world position before loading the next scene.
+    /// </summary>
+    public void SavePlayerPosition(Vector3 position)
+    {
+        SavedPlayerPosition = position;
+        HasSavedPlayerPosition = true;
+    }
+
+    /// <summary>
+    /// Clear saved position so it won't be applied again.
+    /// </summary>
+    public void ClearPlayerPosition()
+    {
+        HasSavedPlayerPosition = false;
+    }
+
+    // =========================================================
+    // CONSUMED BY MANAGERS (ONE-TIME FLAGS)
     // =========================================================
 
     /// <summary>
@@ -73,24 +178,30 @@ public class RunContext : MonoBehaviour
 
     /// <summary>
     /// Used by FuelManager.
-    /// Returns true ONCE if fuel should reset, then clears the flag.
+    /// Returns true if a fuel policy was provided for this scene load.
+    /// The policy is consumed and cleared immediately.
     /// </summary>
-    public bool ConsumeFuelResetFlag()
+    public bool ConsumeFuelPolicy(out FuelPolicy policy, out int presetFuel)
     {
-        if (!resetFuelOnNextScene)
+        policy = fuelPolicyNextScene;
+        presetFuel = presetFuelNextScene;
+
+        if (fuelPolicyNextScene == FuelPolicy.None)
             return false;
 
-        resetFuelOnNextScene = false;
+        // Consume once
+        fuelPolicyNextScene = FuelPolicy.None;
+        presetFuelNextScene = -1;
         return true;
     }
 
     // =========================================================
-    // Safety: optional auto-create RunContext if missing
+    // SAFETY
     // =========================================================
 
     /// <summary>
-    /// If you ever call RunContext.Instance and it's null,
-    /// you can call RunContext.EnsureExists() before using it.
+    /// Ensures RunContext exists.
+    /// Call this before using RunContext.Instance if unsure.
     /// </summary>
     public static void EnsureExists()
     {
@@ -98,6 +209,6 @@ public class RunContext : MonoBehaviour
 
         GameObject go = new GameObject("RunContext");
         go.AddComponent<RunContext>();
-        // Awake will run and set Instance + DontDestroyOnLoad
+        // Awake() will set Instance + DontDestroyOnLoad
     }
 }

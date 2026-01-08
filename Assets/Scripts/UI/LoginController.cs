@@ -18,9 +18,11 @@ public class LoginController : MonoBehaviour
     [Header("Auth")]
     [SerializeField] private string fixedPassword = "RoadRunner#2026";
 
-    // Optional: prefix for guest profiles (keeps guest sessions separate)
     [Header("Guest")]
     [SerializeField] private string guestProfilePrefix = "guest_";
+
+    // Saves the last successful "real user" profile so you can return from guest easily
+    private const string LastUserProfileKey = "LastUserProfile";
 
     private bool busy = false;
 
@@ -45,7 +47,6 @@ public class LoginController : MonoBehaviour
             string username = ValidateUsername();
             if (username == null) return;
 
-            // Ensure we're starting clean and using a profile per username
             AuthenticationService.Instance.SignOut(true);
             AuthenticationService.Instance.SwitchProfile(username);
 
@@ -53,6 +54,9 @@ public class LoginController : MonoBehaviour
 
             await AuthenticationService.Instance
                 .SignUpWithUsernamePasswordAsync(username, fixedPassword);
+
+            // Remember this user profile (so guest doesn't "erase" it locally)
+            SaveLastUserProfile(username);
 
             SetStatus("Registered!");
             SceneManager.LoadScene(mainMenuSceneName);
@@ -93,6 +97,9 @@ public class LoginController : MonoBehaviour
             await AuthenticationService.Instance
                 .SignInWithUsernamePasswordAsync(username, fixedPassword);
 
+            // Remember this user profile (so guest doesn't "erase" it locally)
+            SaveLastUserProfile(username);
+
             SetStatus("Success!");
             SceneManager.LoadScene(mainMenuSceneName);
         }
@@ -121,17 +128,18 @@ public class LoginController : MonoBehaviour
 
         try
         {
-            // We create a unique profile name for a guest session.
-            // Using a profile helps keep different guest sessions separate on the same device.
-            string guestProfile = guestProfilePrefix + Guid.NewGuid().ToString("N");
+            // IMPORTANT:
+            // SwitchProfile() only allows: alphanumeric, '-', '_', and max length 30.
+            // Guid.ToString("N") is 32 chars -> INVALID.
+            // So we take only 12 chars (valid + short).
+            string shortId = Guid.NewGuid().ToString("N").Substring(0, 12);
+            string guestProfile = guestProfilePrefix + shortId; // e.g. "guest_a1b2c3d4e5f6" (<= 30)
 
-            // Start clean (optional but recommended to avoid mixing accounts)
             AuthenticationService.Instance.SignOut(true);
             AuthenticationService.Instance.SwitchProfile(guestProfile);
 
             SetStatus("Entering as guest...");
 
-            // Anonymous sign-in creates an account without username/password.
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
 
             SetStatus("Guest login success!");
@@ -140,6 +148,49 @@ public class LoginController : MonoBehaviour
         catch (Exception e)
         {
             SetStatus("Guest login failed");
+            Debug.LogException(e);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    // =========================
+    // Optional: Back to last user (useful if you add a button)
+    // =========================
+    public async void OnClickBackToLastUser()
+    {
+        if (busy) return;
+        busy = true;
+
+        try
+        {
+            string lastUser = PlayerPrefs.GetString(LastUserProfileKey, "");
+            if (string.IsNullOrEmpty(lastUser))
+            {
+                SetStatus("No saved user on this device");
+                return;
+            }
+
+            AuthenticationService.Instance.SignOut(true);
+            AuthenticationService.Instance.SwitchProfile(lastUser);
+
+            SetStatus("Logging in...");
+
+            await AuthenticationService.Instance
+                .SignInWithUsernamePasswordAsync(lastUser, fixedPassword);
+
+            SetStatus("Success!");
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
+        catch (AuthenticationException)
+        {
+            SetStatus("Saved user login failed");
+        }
+        catch (Exception e)
+        {
+            SetStatus("Login failed");
             Debug.LogException(e);
         }
         finally
@@ -181,5 +232,11 @@ public class LoginController : MonoBehaviour
     {
         if (statusText != null)
             statusText.text = msg;
+    }
+
+    private void SaveLastUserProfile(string username)
+    {
+        PlayerPrefs.SetString(LastUserProfileKey, username);
+        PlayerPrefs.Save();
     }
 }

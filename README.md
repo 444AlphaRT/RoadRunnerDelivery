@@ -20,7 +20,7 @@ The goal is to complete as many deliveries as possible.
 ## Play Online
 The game is also available on itch.io:
 
-➡️ https://alpha444rt.itch.io/roadrunner-c
+➡️ https://alpha444rt.itch.io/roaddelivery
 
 ## Run Locally
 1. Clone the repo

@@ -1529,7 +1529,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &308903684
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1871,10 +1871,10 @@ RectTransform:
   - {fileID: 1653901504}
   m_Father: {fileID: 385767145}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 33.333336}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 76.9889, y: -83.33334}
+  m_SizeDelta: {x: 153.9778, y: 33.333336}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &377145441
 MonoBehaviour:
@@ -8002,10 +8002,10 @@ RectTransform:
   - {fileID: 2103894376}
   m_Father: {fileID: 385767145}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 33.333336}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 76.9889, y: -50.000004}
+  m_SizeDelta: {x: 153.9778, y: 33.333336}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1524639140
 MonoBehaviour:
@@ -8608,10 +8608,10 @@ RectTransform:
   - {fileID: 437794452}
   m_Father: {fileID: 385767145}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 33.333336}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 76.9889, y: -16.666668}
+  m_SizeDelta: {x: 153.9778, y: 33.333336}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1631661109
 MonoBehaviour:
@@ -9526,7 +9526,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 29, y: -18.831}
+  m_AnchoredPosition: {x: -3.4, y: -31.8}
   m_SizeDelta: {x: 525.3534, y: 228.03}
   m_Pivot: {x: 0.52867544, y: 0.41741946}
 --- !u!114 &1871740813
@@ -9565,7 +9565,9 @@ MonoBehaviour:
     Late deliveries mean smaller tips.
 
     6. Complete two deliveries to finish
-    the level.'
+    the level.
+
+    7.Press P anytime to pause the game '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9592,8 +9594,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 19
+  m_fontSizeBase: 19
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
